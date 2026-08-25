@@ -1,0 +1,8 @@
+{
+  "servers": {
+    "launchboard-mcp": {
+      "url": "https://launchboard.fastmcp.app/mcp",
+      "type": "http"
+    }
+  }
+}
