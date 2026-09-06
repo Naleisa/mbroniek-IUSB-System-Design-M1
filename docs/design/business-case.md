@@ -79,6 +79,7 @@ Proceed with option B (Verification-first portal).  Build with two partner agenc
 | Role | Name | Date | Decision |
 |------|------|------|----------|
 | CEO | Steve CEO | Beginning of product build and after pilot | Go / No-go based on recommendation |
+| Board | | Beginning of product build and after pilot | Go / No-go based on provided financial and viability analysis |
 | Partner Agencies | Agency A & B | End of pilot phase | Go / No-go based on feedback and viability of implementing feedback |
 
 ---
