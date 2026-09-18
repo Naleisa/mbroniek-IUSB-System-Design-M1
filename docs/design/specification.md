@@ -1,79 +1,169 @@
-# Specification: [Your App Idea Name]
 
-App description: [Write a one or two sentences describing what your app does and who it’s for.]
-
-## Style and Theme
-
-[Describe the look and feel of your app.] 
-
-Overall mood:
-Examples: fun and playful, calm and professional, bold and energetic, etc.
-
-Use the *style-guide.html* for details on styling -- fonts, colors, and layout.
-
-## User Scenarios
-
-### Story 1 (most important)
-
-[Write 1-2 sentences. Who is using the app, what do they want to do, and what do they see when it works? Write it like you are describing it to a friend.]
+# [Product/Service Name] — Specification
 
 ---
 
-## Requirements
+## 0. Constitution (fill once per project, reuse across specs)
 
-Write clear statements about what the app must do.
+Non-negotiable principles this product must never violate, regardless of feature.
 
-### Functional Requirements
+| # | Principle | Why it exists |
+|--|-----------|----------------|
+| 1 | The system never makes a hiring decision. | Discrimination |
+| 2 | No caregiver reaches "cleared" with missing or expired required items. | Core promise |
+| 3 | Software is a workflow layer, not reporting agency | Core promise |
+| 4 | Identifiers are minimized and tokenized | Security |
+| 5 | Audit record is append only | Usability |
+| 6 | Verification has a shelf life | Usability |
+| 7 | Applicant and agency data is theirs and not ours | Trust |
+| 8 | Verification laws are followed to only share required information | Legal |
 
-1. The app must include these pages:
-	 - Home (`#/`)
-	 - Collection (`#/items`)
-	 - Item detail (`#/items/:id`)
-	 - About (`#/about`)
-2. The navigation bar must let people move to Home, Items, and About.
-3. The app must load data from `items-template.csv` (a simple text table file).
-4. The collection page must show one card per row in the data file.
-5. Each card must include name, short description, and image (if available).
-6. Each card must include a way to open that item's detail page.
-7. The detail page must show full information for one selected item.
+---
 
-### Key Data
+## 1. Problem & Intent
 
-Use this as the basic item shape from the current starter data file.
+**Who is this for?**
 
-- Item
-	- id
-	- name
-	- description
-	- category
-	- image_url
-	- location
+(Name the specific user, not "everyone.")
 
-## Success Criteria
+**What problem do they have today?**
 
-Describe what success looks like in simple, observable terms.
+(Describe the pain, not the solution.)
 
-1. A new person can open the app and reach the collection page in one click from Home.
-2. A new person can open one item detail page from the collection without help.
-3. If the data cannot load, the app shows a clear message instead of a blank page.
+**Why now / why us?**
 
+**What does success look like?**
 
+(A measurable outcome, not a feature list — e.g. "80% of new users complete setup in under 3 minutes.")
 
-### Starter defaults
+---
 
-The template starts with Bootstrap default styling (light background, blue primary, simple cards). You only need to describe the changes you want.
+## 2. Scope
 
-## Assumptions
+**In scope** — what this version must do.
 
-- This is a beginner project for learning how to describe app behavior before generating code. It is a prototype, not a finished product.
-- The app stays simple and uses one text table data file as its data source.
-- The data may use placeholder images or no images at all. Use picsum.photos for any needed placeholder images.
-- Styling remains based on Bootstrap classes already used in the starter project.
-- The first version focuses on clarity and working basics, not advanced features.
+**Out of scope** — what it explicitly will NOT do (this list prevents scope creep and over-building).
 
-## Notes for Students (How to Use This Template)
+---
 
-- Keep each section short and plain.
-- Write for a classmate who is not technical.
-- Focus on user actions and visible results.
-- Start with Story 1 and only add extras if you have time.
+## 3. User Scenarios
+
+Write each as a short story: who, what they're trying to do, what "done" looks like.
+
+**Scenario 1: [name]**
+
+- Actor:
+
+- Trigger:
+
+- Steps:
+
+- Success outcome:
+
+- Failure outcome:
+
+  
+
+*(Repeat for each core scenario. 3–5 is typical for a first spec.)*
+
+---
+
+## 4. Requirements (EARS notation)
+
+Use [EARS](https://alistairmavin.com/ears/) (Easy Approach to Requirements Syntax) so requirements are consistent and unambiguous.
+
+Patterns:
+
+-  **Ubiquitous:**  *The system shall [always do X].*
+
+-  **Event-driven:**  *When [trigger], the system shall [response].*
+
+-  **State-driven:**  *While [state], the system shall [response].*
+
+-  **Unwanted behavior:**  *If [condition], then the system shall [response].*
+
+-  **Optional:**  *Where [feature is present], the system shall [response].*
+
+  
+
+| ID | Requirement | Pattern |
+
+|----|-------------|---------|
+
+| R1 | When a user submits the signup form with a valid email, the system shall create an account and send a confirmation email. | Event |
+
+| R2 | | |
+
+---
+
+## 5. Acceptance Criteria
+
+For each requirement, define the test that proves it's done. If you can't write a pass/fail test, the requirement is still too vague.
+
+| Requirement | Test | Pass condition |
+
+|-------------|------|-----------------|
+
+| R1 | Submit form with valid email | Account exists in DB; email received within 60s |
+
+---
+
+## 6. Constraints & Non-Functional Requirements
+
+-  **Performance:**
+
+-  **Security/Privacy:**
+
+-  **Accessibility:**
+
+-  **Compliance/Legal:**
+
+-  **Budget/Timeline:**
+
+---
+
+## 7. Open Questions
+
+Anything unresolved. Don't let AI or a builder guess silently — list it and get an answer before build starts.
+
+| Question | Owner | Status |
+
+|----------|-------|--------|
+
+| | | Open / Resolved |
+
+---
+
+## 8. Plan (derived from this spec — separate document once approved)
+
+Once the spec above is approved, translate it into:
+
+-  **`plan.md`** — the approach and key decisions, each traced back to a requirement ID above
+
+-  **`tasks.md`** — atomic, ordered, checkable tasks derived from the plan
+
+Do not skip from spec straight to a build without reviewing the plan first.
+
+---
+
+## 9. Approval
+
+| Role | Name | Date | Signed off? |
+
+|------|------|------|-------------|
+
+| Spec owner | | | |
+
+| Reviewer | | | |
+
+---
+
+### Primary sources this template draws on
+
+- [GitHub Spec Kit](https://github.com/github/spec-kit) — open-source spec/plan/tasks toolkit
+
+- [Spec-Driven Development methodology](https://github.com/github/spec-kit/blob/main/spec-driven.md) — GitHub's explainer
+
+- [EARS notation](https://alistairmavin.com/ears/) — requirements syntax
+
+- [Microsoft: Spec-Driven Development for AI-Native Engineering](https://developer.microsoft.com/blog/spec-driven-development-ai-native-engineering/)
