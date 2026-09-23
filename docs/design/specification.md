@@ -9,14 +9,14 @@ Non-negotiable principles this product must never violate, regardless of feature
 
 | # | Principle | Why it exists |
 |--|-----------|----------------|
-| 1 | The system never makes a hiring decision. | Discrimination |
-| 2 | No caregiver reaches "cleared" with missing or expired required items. | Core promise |
-| 3 | Software is a workflow layer, not reporting agency | Core promise |
-| 4 | Identifiers are minimized and tokenized | Security |
-| 5 | Audit record is append only | Usability |
-| 6 | Verification has a shelf life | Usability |
-| 7 | Applicant and agency data is theirs and not ours | Trust |
-| 8 | Verification laws are followed to only share required information | Legal |
+| C1 | The system never makes a hiring decision. | Discrimination |
+| C2 | No caregiver reaches "cleared" with missing or expired required items. | Core promise |
+| C3 | Software is a workflow layer, not reporting agency | Core promise |
+| C4 | Identifiers are minimized and tokenized | Security |
+| C5 | Audit record is append only | Usability |
+| C6 | Verification has a shelf life | Usability |
+| C7 | Applicant and agency data is theirs and not ours | Trust |
+| C8 | Verification laws are followed to only share required information | Legal |
 
 ---
 
@@ -140,40 +140,40 @@ Options for caregivers and admins alike are limited to hiring portals that are u
 Patterns:
 
 -  **Ubiquitous:**
-	- The system shall always maintain an append-only audit record of every event.
-	- The system shall record, for each required item, its source, verification method, date, and expiration date.
-	- The system shall present background check disclosure and authorization as documents separate from the application.
-	- The system shall restrict access to caregiver records to users with an assigned role on that agency.
-	- The system shall store identifiable numbers used for screening in tokenized form only.
-	- The system shall make a caregiver's own status visible to the caregiver without coordinator intervention.
+	- R1 The system shall always maintain an append-only audit record of every event.
+	- R2 The system shall record, for each required item, its source, verification method, date, and expiration date.
+	- R3 The system shall present background check disclosure and authorization as documents separate from the application.
+	- R4 The system shall restrict access to caregiver records to users with an assigned role on that agency.
+	- R5 The system shall store identifiable numbers used for screening in tokenized form only.
+	- R6 The system shall make a caregiver's own status visible to the caregiver without coordinator intervention.
 
 -  **Event-driven:**
-	- When an applicant submits an intake with all required fields completed, the system shall create a caregiver record in Intake Complete and notify the coordinator.
-	- When an applicant abandons intake before submission, the system shall retain a partial record and issue a resumable link valid for a period.
-	- When a coordinator orders a background check, the system shall transmit the request to the screening vendor and set the check status to Ordered.
-	- When a screening result is received, the system shall attach it to the caregiver record and update the status of the item.
-	- When a document is uploaded, the system shall record its type, capture its expiration date, and place it in pending.
-	- When all required items are verified and current, the system shall make the record eligible for cleared.
-	- When an admin requests a compliance report, the system shall produce a single document containing every required item, along with evidence and verification history.
+	- R7 When an applicant submits an intake with all required fields completed, the system shall create a caregiver record in Intake Complete and notify the coordinator.
+	- R8 When an applicant abandons intake before submission, the system shall retain a partial record and issue a resumable link valid for a period.
+	- R9 When a coordinator orders a background check, the system shall transmit the request to the screening vendor and set the check status to Ordered.
+	- R10 When a screening result is received, the system shall attach it to the caregiver record and update the status of the item.
+	- R11 When a document is uploaded, the system shall record its type, capture its expiration date, and place it in pending.
+	- R12 When all required items are verified and current, the system shall make the record eligible for cleared.
+	- R13 When an admin requests a compliance report, the system shall produce a single document containing every required item, along with evidence and verification history.
 
 -  **State-driven:**
-	- While a caregiver record has any incomplete or expired items, the system shall prevent transition to cleared.
-	- While a required item is within its expiration warning window, the system shall display it as expiring and include it on the worklist.
-	- While a background check is outstanding, the system shall display its elapsed time.
-	- While a caregiver record is in review required, the system shall prevent any automated status advancement.
-	- While an applicant's intake is incomplete, the system shall display the outstanding items and what each is waiting on.
+	- R14 While a caregiver record has any incomplete or expired items, the system shall prevent transition to cleared.
+	- R15 While a required item is within its expiration warning window, the system shall display it as expiring and include it on the worklist.
+	- R16 While a background check is outstanding, the system shall display its elapsed time.
+	- R17 While a caregiver record is in review required, the system shall prevent any automated status advancement.
+	- R18 While an applicant's intake is incomplete, the system shall display the outstanding items and what each is waiting on.
 
 -  **Unwanted behavior:**
-	- If a screening result matches an exclusion list, the system shall place the record in review required.
-	- If a vendor doesn't return a result within the configured threshold, the system shall set the check to delayed.
-	- If a vendor request fails, the system shall retain the order in a retryable state.
-	- If an uploaded document is unreadable, the system will route it to manual verification, instead of dropping it or advancing it.
-	- If a coordinator attempts to advance a record with missing items, the system shall refuse the transition and give appropriate feedback.
-	- If a document's expiration has already passed at upload, then the system shall reject it.
-	- If an applicant declines screening consent, the system shall stop screening and notify the coordinator without discarding the record.
+	- R19 If a screening result matches an exclusion list, the system shall place the record in review required.
+	- R20 If a vendor doesn't return a result within the configured threshold, the system shall set the check to delayed.
+	- R21 If a vendor request fails, the system shall retain the order in a retryable state.
+	- R22 If an uploaded document is unreadable, the system will route it to manual verification, instead of dropping it or advancing it.
+	- R23 If a coordinator attempts to advance a record with missing items, the system shall refuse the transition and give appropriate feedback.
+	- R24 If a document's expiration has already passed at upload, then the system shall reject it.
+	- R25 If an applicant declines screening consent, the system shall stop screening and notify the coordinator without discarding the record.
 
 -  **Optional:**
-	- When a state registry is available, the system shall query it automatically, and when it's not it will track a manual verification
+	- R26 When a state registry is available, the system shall query it automatically, and when it's not it will track a manual verification
 
 ---
 
@@ -220,9 +220,22 @@ Patterns:
 
 ---
 
-## 7. Open Questions
+## 7. Decisions & Open Questions
 
-*TBD*
+**Decided for first demo build**
+- D1 Build scope: A working demo with a real database, sign-in and workflow.  The background check, OIG/SAM exclusion and state registry checks are mocked behind swappable vendor adapters.  No real SSNs or real applicant data are used.
+- D2 Location: Indiana only.
+- D3 Job role: Home Health Aide (HHA) only. One requirement template.
+- D4 Users in the demo: Applicant/caregivers and coordinator.  Coordinator in demo can run compliance report and requirements templats are loaded as seeded data, with no editing screen.
+- D5 Applicant sign-in: magic link by email, which is also the resume link.  Coordinator sign-in: email + password.
+- D6 Notifications: real email, SMS is mocked (logged to an in-app outbox, not sent).
+- D7 Two demo agencies are seeded so access separation between agencies (R4) can be shown and tested.
+
+**Open Questions (Not blocking demo)**
+- Q1 Exact Indiana HHA required items must be confirmed against current Indiana rules before any real use.  The demo template is a sample and is labeled that way.
+- Q2 Which real background check vendor to use after the pilot.
+- Q3 When owner and platform-admin roles come back into scope.
+- Q4 Retention and deletion periods by record type (legal review).
 
 ---
 
