@@ -44,7 +44,7 @@ const CURRENT_STATUSES = ['Verified', 'Expiring'];
  * verified yet (R12, R14, C2).
  */
 export function findBlockingItems(dataLayer: DataLayer, caregiver: Row): string[] {
-  const today = formatLocalDateTime(new Date()).slice(0, 10);
+  const today = formatLocalDateTime(dataLayer.today()).slice(0, 10);
   const templateItems = dataLayer
     .list('template_items')
     .filter((item) => item.template_id === caregiver.template_id)
@@ -107,7 +107,7 @@ export function transitionCaregiver(
   const updated = dataLayer.update(
     'caregivers',
     caregiverId,
-    { lifecycle_state: toState, state_changed_at: formatLocalDateTime(new Date()) },
+    { lifecycle_state: toState, state_changed_at: formatLocalDateTime(dataLayer.today()) },
     actor,
   );
   return { ok: true, caregiver: updated };

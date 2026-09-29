@@ -73,7 +73,7 @@ export function orderCheck(
     return { ok: false, reason: `This check can't be ordered while it is ${item.status}.` };
   }
 
-  const orderedAt = formatLocalDateTime(new Date());
+  const orderedAt = formatLocalDateTime(dataLayer.today());
   dataLayer.update('required_items', item.id, { status: 'Ordered', ordered_at: orderedAt, result: '', notes: '' }, actor);
   const order = dataLayer.insert(
     'check_orders',
@@ -95,7 +95,7 @@ export function orderCheck(
  * registry leaves the item for a manual verification (R26).
  */
 function recordResult(systemDataLayer: DataLayer, itemId: string, orderId: string, vendorResult: VendorResult): void {
-  const now = new Date();
+  const now = systemDataLayer.today();
   const completedAt = formatLocalDateTime(now);
   const item = systemDataLayer.get('required_items', itemId);
   const caregiver = item && systemDataLayer.get('caregivers', item.caregiver_id);
@@ -216,7 +216,7 @@ export function verifyManually(
   if (!note) {
     return { ok: false, reason: 'Describe what you checked before marking this verified.' };
   }
-  const today = formatLocalDateTime(new Date()).slice(0, 10);
+  const today = formatLocalDateTime(dataLayer.today()).slice(0, 10);
   if (!isRealDate(verification.expirationDate)) {
     return { ok: false, reason: 'Enter the expiration date as a real date (YYYY-MM-DD).' };
   }

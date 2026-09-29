@@ -17,13 +17,14 @@ const app = createApp(App);
 
 const backend = createBrowserBackend();
 const dataLayer = createDataLayer(backend);
-// Jobs run once the seed is loaded (ADR-13). Today's real date is used until the demo-date control (T60).
+// Jobs run once the seed is loaded, using the demo date when one is set (ADR-13). Changing the
+// demo date reloads the page, so the jobs run again here.
 dataLayer
   .loadSeed(fetchSeedFiles)
   .then(() => {
     const systemDataLayer = createSystemDataLayer(backend);
-    runDelayedCheckJob(systemDataLayer, new Date());
-    runExpirationJob(systemDataLayer, new Date());
+    runDelayedCheckJob(systemDataLayer, systemDataLayer.today());
+    runExpirationJob(systemDataLayer, systemDataLayer.today());
   })
   .catch((error) => {
     console.error('There was a problem loading the demo seed data.', error);

@@ -3,6 +3,7 @@ import { inject, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import logoUrl from '../assets/carematchlogo.png';
 import { dataLayerKey } from '../data/dataLayer';
+import { formatLocalDateTime } from '../data/relativeDates';
 import { fetchSeedFiles } from '../data/seed';
 import { sessionKey } from '../session';
 
@@ -21,6 +22,8 @@ async function resetDemoData() {
   try {
     await dataLayer.resetDemoData(fetchSeedFiles);
     session.value = undefined;
+    // Reset also clears the demo date, so the app is back on the real today.
+    demoDate.value = undefined;
     confirmingReset.value = false;
     router.push({ path: '/', query: { reset: 'done' } });
   } catch {
@@ -28,6 +31,26 @@ async function resetDemoData() {
   } finally {
     resetting.value = false;
   }
+}
+
+// Demo date (ADR-13, T60): the date the app treats as today, from the real today up to two years out.
+// Changing it reloads the page, so both jobs run again at start-up and every screen reads fresh data.
+const realToday = formatLocalDateTime(new Date()).slice(0, 10);
+const latestDemoDate = formatLocalDateTime(new Date(Date.now() + 2 * 365 * 24 * 60 * 60 * 1000)).slice(0, 10);
+const demoDate = ref(dataLayer.getDemoDate());
+
+function changeDemoDate(event: Event) {
+  const value = (event.target as HTMLInputElement).value;
+  if (!value || value < realToday || value > latestDemoDate) {
+    return;
+  }
+  dataLayer.setDemoDate(value === realToday ? undefined : value);
+  window.location.reload();
+}
+
+function backToToday() {
+  dataLayer.setDemoDate(undefined);
+  window.location.reload();
 }
 </script>
 
@@ -38,7 +61,22 @@ async function resetDemoData() {
       <img :src="logoUrl" alt="CareMatch" width="160" height="40" />
     </router-link>
 
-    <div class="ms-auto d-flex flex-wrap align-items-center justify-content-end gap-2 py-1">
+    <div class="ms-auto d-flex flex-wrap align-items-end justify-content-end gap-2 py-1">
+      <div>
+        <label for="demo-date" class="form-label small mb-0">Demo date</label>
+        <input
+          id="demo-date"
+          type="date"
+          class="form-control form-control-sm"
+          :value="demoDate ?? realToday"
+          :min="realToday"
+          :max="latestDemoDate"
+          @change="changeDemoDate"
+        />
+      </div>
+      <button v-if="demoDate" type="button" class="btn btn-outline-primary btn-sm" @click="backToToday">
+        Back to today
+      </button>
       <button
         v-if="!confirmingReset"
         type="button"
@@ -61,6 +99,14 @@ async function resetDemoData() {
           Cancel
         </button>
       </template>
+      <span
+        v-if="demoDate"
+        class="badge border bg-warning-subtle text-warning-emphasis border-warning-subtle text-wrap fw-normal"
+        role="status"
+      >
+        <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+        Demo date active: the app is treating {{ demoDate }} as today.
+      </span>
       <span v-if="resetError" class="small text-danger-emphasis w-100 text-end" role="alert">{{ resetError }}</span>
     </div>
   </nav>

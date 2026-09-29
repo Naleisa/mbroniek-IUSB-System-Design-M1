@@ -39,8 +39,17 @@ export interface DataLayer {
   getSignedInUser(): Row | undefined;
   /** Loads the seed on first start only. Returns true when the seed was loaded. */
   loadSeed(getSeedFiles: () => Promise<SeedFiles>, today?: Date): Promise<boolean>;
-  /** "Reset demo data" (T59): clears all stored data, documents, and the session, then reloads the seed. */
+  /** "Reset demo data" (T59): clears all stored data, documents, the session, and the demo date, then reloads the seed. */
   resetDemoData(getSeedFiles: () => Promise<SeedFiles>, today?: Date): Promise<void>;
+  /**
+   * The moment the app treats as now (ADR-13): the demo date at the current clock
+   * time, or the real now when no demo date is set. Use this instead of `new Date()`.
+   */
+  today(): Date;
+  /** The demo date as YYYY-MM-DD, or undefined when the app is using the real date. */
+  getDemoDate(): string | undefined;
+  /** Sets the demo date (YYYY-MM-DD), or clears it with undefined. */
+  setDemoDate(date: string | undefined): void;
 }
 
 export type SignInWithLinkResult = { ok: true; user: Row; next: string } | { ok: false; reason: string };
@@ -49,6 +58,19 @@ export const dataLayerKey: InjectionKey<DataLayer> = Symbol('dataLayer');
 
 /** Holds the one signed-in user id; kept like other data so a reload stays signed in. */
 const SESSION_TABLE = 'session';
+
+/** The demo date (T60), kept like other data so a reload keeps it and "Reset demo data" clears it. */
+const DEMO_DATE_TABLE = 'demo_date';
+
+/** Reads a stored demo date at the current clock time, or returns the real now. */
+function currentMoment(demoDate: string | undefined): Date {
+  const now = new Date();
+  if (!demoDate) {
+    return now;
+  }
+  const [year, month, day] = demoDate.split('-').map(Number);
+  return new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds());
+}
 
 /** Magic-link tokens. Written directly, not through `insert`, so tokens never appear in the audit log. */
 const SIGN_IN_LINKS_TABLE = 'sign_in_links';
@@ -260,7 +282,7 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
     const auditEvent: AuditEvent = {
       id: crypto.randomUUID(),
       caregiver_id: table === 'caregivers' ? record.id : (record.caregiver_id ?? ''),
-      occurred_at: formatLocalDateTime(new Date()),
+      occurred_at: formatLocalDateTime(today()),
       actor_role: actor.role,
       actor_name: actor.name,
       event,
@@ -398,7 +420,7 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
 
       const settings = backend.readTable('settings');
       const windowDays = Number(settings.find((row) => row.key === 'resume_window_days')?.value) || 7;
-      const now = new Date();
+      const now = today();
       const expires = new Date(now);
       expires.setDate(expires.getDate() + windowDays);
 
@@ -440,7 +462,7 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
       if (!link || !user) {
         return { ok: false, reason: "This sign-in link isn't valid. Please request a new one." };
       }
-      if (link.expires_at < formatLocalDateTime(new Date())) {
+      if (link.expires_at < formatLocalDateTime(today())) {
         return { ok: false, reason: 'This sign-in link has expired. Please request a new one.' };
       }
       backend.writeTable(SESSION_TABLE, [{ id: 'current', user_id: user.id }]);
@@ -471,7 +493,30 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
       await backend.clearAll();
       await loadSeed(async () => files, today);
     },
+
+    today,
+
+    getDemoDate,
+
+    setDemoDate: (date) => {
+      if (date === undefined) {
+        backend.writeTable(DEMO_DATE_TABLE, []);
+        return;
+      }
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        throw new Error('The demo date must be written as YYYY-MM-DD.');
+      }
+      backend.writeTable(DEMO_DATE_TABLE, [{ id: 'current', date }]);
+    },
   };
+
+  function getDemoDate(): string | undefined {
+    return backend.readTable(DEMO_DATE_TABLE)[0]?.date || undefined;
+  }
+
+  function today(): Date {
+    return currentMoment(getDemoDate());
+  }
 
   // Seeding writes directly: the seed carries its own audit history, so it adds no events.
   async function loadSeed(getSeedFiles: () => Promise<SeedFiles>, today = new Date()): Promise<boolean> {
