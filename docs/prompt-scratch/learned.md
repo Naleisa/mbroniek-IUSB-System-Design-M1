@@ -13,3 +13,5 @@ Task 5 had some serious confusion from claude that I had to answer multiple open
 Task 6 found gaps in our seed documents.  Had it update with fake data to correct.
 
 Task 10 found gaps in our process of where a caregiver's status can go after review required.  Agreed with Claude's recommendations on this one for the requirements.
+
+Task 12 realized around this time that design docs are no longer reachable because we're building the page using a workflow.  Had claude build a new task to include a page that had design docs on it.
