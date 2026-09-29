@@ -58,7 +58,7 @@ Phases follow plan.md Section 6. All new work lives in `/app` (ADR-02); no task 
 | T26 | Extend the expiration job to move a Cleared record with an expired required item to Not Current and notify the coordinator. | A test runs the job and confirms a Cleared record with one expired item becomes Not Current with a coordinator notification, and a fully current Cleared record is untouched. | ADR-19, C2, C6, R14 | T11, T25 | Done |
 | T60 | Add a demo-date control to the navbar that sets the date the app treats as today and re-runs both jobs. | Manual check: move the demo date forward past a seeded expiration date and see the item become Expired; return the date to today and see the seeded items again. A Cleared record moved to Not Current stays Not Current (only a coordinator can restore Cleared, ADR-19); "Reset demo data" returns it. | ADR-13, R15, R20, C6 | T24, T25, T59 | Not started |
 | T27 | Build the notification service that writes each email notification to the in-app outbox. | A test confirms creating an email notification writes exactly one outbox row marked email and makes no network request. | ADR-06, R7, R10, R15, R25 | T21 | Done |
-| T28 | Log SMS-channel notifications to the same outbox, marked SMS. | A test confirms an SMS notification writes exactly one outbox row marked SMS and makes no network request. | ADR-06 | T27 | Not started |
+| T28 | Log SMS-channel notifications to the same outbox, marked SMS. | A test confirms an SMS notification writes exactly one outbox row marked SMS and makes no network request. | ADR-06 | T27 | Done |
 
 ### Phase 4 — Applicant Intake, Consent, and Uploads
 

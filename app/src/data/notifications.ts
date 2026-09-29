@@ -29,6 +29,18 @@ export function sendEmail(systemDataLayer: DataLayer, message: EmailMessage, now
   );
 }
 
+/** A text message has no subject line, only a body. */
+export type SmsMessage = Omit<EmailMessage, 'subject'>;
+
+/** Writes one text message to the outbox as CareMatch, with a blank subject, and returns the outbox row. */
+export function sendSms(systemDataLayer: DataLayer, message: SmsMessage, now: Date): Row {
+  return systemDataLayer.insert(
+    'notifications',
+    { ...message, subject: '', channel: 'sms', created_at: formatLocalDateTime(now) },
+    SYSTEM,
+  );
+}
+
 /** The coordinators of one agency, who receive that agency's record notifications. */
 export function coordinatorsOf(systemDataLayer: DataLayer, agencyId: string): Row[] {
   return systemDataLayer.list('users').filter((user) => user.role === 'coordinator' && user.agency_id === agencyId);
