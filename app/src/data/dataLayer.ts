@@ -336,15 +336,38 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
       return { ssn_token: entry.token, ssn_last4: ssnLast4 };
     },
 
+    // Files are tagged with their caregiver and that caregiver's agency, and use the same access filter as tables (R4).
     putDocument: async (document, actor) => {
-      await backend.putDocument(document);
-      appendAuditEvent(actor, 'Document stored', document.meta.file_name ?? '', 'documents', {
-        ...document.meta,
-        id: document.id,
+      const caregiverId = document.meta.caregiver_id;
+      if (!caregiverId) {
+        throw new Error('A document must belong to a caregiver.');
+      }
+      const caregiver = backend.readTable('caregivers').find((row) => row.id === caregiverId);
+      if (!caregiver) {
+        throw new Error(`No caregivers row with id ${caregiverId}.`);
+      }
+      const tagged: StoredDocument = { ...document, meta: { ...document.meta, agency_id: caregiver.agency_id } };
+      refuseOutOfScopeWrite('documents', { ...tagged.meta, id: tagged.id });
+
+      await backend.putDocument(tagged);
+      appendAuditEvent(actor, 'Document stored', tagged.meta.file_name ?? '', 'documents', {
+        ...tagged.meta,
+        id: tagged.id,
       });
     },
-    getDocument: (id) => backend.getDocument(id),
-    listDocuments: () => backend.listDocuments(),
+
+    getDocument: async (id) => {
+      const document = await backend.getDocument(id);
+      return document && isVisible('documents', { ...document.meta, id: document.id }, viewer())
+        ? document
+        : undefined;
+    },
+
+    listDocuments: async () => {
+      const reader = viewer();
+      const documents = await backend.listDocuments();
+      return documents.filter((document) => isVisible('documents', { ...document.meta, id: document.id }, reader));
+    },
 
     signIn: (email, password) => {
       const user = backend

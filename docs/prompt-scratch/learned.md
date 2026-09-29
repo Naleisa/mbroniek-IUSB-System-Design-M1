@@ -6,7 +6,7 @@ Next step was redesigning the plan, specification, and tasks to match the requir
 
 Task 1 was completed with no issues.  Was able to run it on dev without problems.  Questions were asked and answered.
 
-Before starting on Tasks 2 I went through and removed all playwright and Vitest requirements, and left it with manual checks only.
+Before starting on Tasks 2 I went through and removed all playwright requirements, and left it with manual checks and vitest only.
 
 Task 5 had some serious confusion from claude that I had to answer multiple open questions.
 
@@ -18,6 +18,6 @@ Task 12 realized around this time that design docs are no longer reachable becau
 
 Task 14 gave great recommendations to show the demo username/password on the login screen for demo purposes
 
-Task 15 left some really ugly text for the URL.  Had Claude clean that up. (Side note: The latest model of Opus (5.5) is insanely efficient it seems)
+Task 15 left some really ugly text for the URL.  Had Claude clean that up.
 
 T59 found issues with the way we were planning on clearing data.  Cleared up some requirements for edits.
