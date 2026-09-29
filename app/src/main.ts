@@ -8,16 +8,24 @@ import { createApp, ref } from 'vue';
 import App from './App.vue';
 import router from './router';
 import { createBrowserBackend } from './data/browserBackend';
-import { createDataLayer, dataLayerKey } from './data/dataLayer';
+import { createDataLayer, createSystemDataLayer, dataLayerKey } from './data/dataLayer';
+import { runDelayedCheckJob } from './data/jobs';
 import { fetchSeedFiles } from './data/seed';
 import { sessionKey } from './session';
 
 const app = createApp(App);
 
-const dataLayer = createDataLayer(createBrowserBackend());
-dataLayer.loadSeed(fetchSeedFiles).catch((error) => {
-  console.error('There was a problem loading the demo seed data.', error);
-});
+const backend = createBrowserBackend();
+const dataLayer = createDataLayer(backend);
+// Jobs run once the seed is loaded (ADR-13). Today's real date is used until the demo-date control (T60).
+dataLayer
+  .loadSeed(fetchSeedFiles)
+  .then(() => {
+    runDelayedCheckJob(createSystemDataLayer(backend), new Date());
+  })
+  .catch((error) => {
+    console.error('There was a problem loading the demo seed data.', error);
+  });
 app.provide(dataLayerKey, dataLayer);
 app.provide(sessionKey, ref(dataLayer.getSignedInUser()));
 
