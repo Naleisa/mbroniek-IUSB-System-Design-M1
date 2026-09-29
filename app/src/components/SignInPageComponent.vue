@@ -45,6 +45,9 @@ function signIn() {
           <li>dana.whitfield@hoosierhomecare.example</li>
           <li>marcus.lee@riverbendcaregivers.example</li>
         </ul>
+        <p class="small">
+          Applying for a job? <router-link to="/applicant/sign-in">Sign in with an email link</router-link>
+        </p>
       </div>
     </div>
   </div>

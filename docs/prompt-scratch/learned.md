@@ -17,3 +17,5 @@ Task 10 found gaps in our process of where a caregiver's status can go after rev
 Task 12 realized around this time that design docs are no longer reachable because we're building the page using a workflow.  Had claude build a new task to include a page that had design docs on it.
 
 Task 14 gave great recommendations to show the demo username/password on the login screen for demo purposes
+
+Task 15 left some really ugly text for the URL.  Had Claude clean that up.

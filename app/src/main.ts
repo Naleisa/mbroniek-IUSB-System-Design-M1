@@ -21,10 +21,14 @@ dataLayer.loadSeed(fetchSeedFiles).catch((error) => {
 app.provide(dataLayerKey, dataLayer);
 app.provide(sessionKey, ref(dataLayer.getSignedInUser()));
 
-// Coordinator pages send anyone not signed in as a coordinator to sign-in (ADR-05).
+// Coordinator and applicant pages send anyone without that role to the matching sign-in (ADR-05).
 router.beforeEach((to) => {
-  if (to.meta.requiresCoordinator && dataLayer.getSignedInUser()?.role !== 'coordinator') {
+  const role = dataLayer.getSignedInUser()?.role;
+  if (to.meta.requiresCoordinator && role !== 'coordinator') {
     return '/sign-in';
+  }
+  if (to.meta.requiresApplicant && role !== 'applicant') {
+    return { path: '/applicant/sign-in', query: { next: to.fullPath } };
   }
   return true;
 });

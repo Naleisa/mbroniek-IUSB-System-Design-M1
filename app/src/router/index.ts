@@ -3,6 +3,10 @@ import LandingPageComponent from '../components/LandingPageComponent.vue';
 import ComponentsPageComponent from '../components/ComponentsPageComponent.vue';
 import SignInPageComponent from '../components/SignInPageComponent.vue';
 import DashboardPageComponent from '../components/DashboardPageComponent.vue';
+import ApplicantSignInPageComponent from '../components/ApplicantSignInPageComponent.vue';
+import OutboxPageComponent from '../components/OutboxPageComponent.vue';
+import AuthPageComponent from '../components/AuthPageComponent.vue';
+import ApplicantHomePageComponent from '../components/ApplicantHomePageComponent.vue';
 
 const routes = [
   {
@@ -21,6 +25,23 @@ const routes = [
     path: '/dashboard',
     component: DashboardPageComponent,
     meta: { requiresCoordinator: true },
+  },
+  {
+    path: '/applicant/sign-in',
+    component: ApplicantSignInPageComponent,
+  },
+  {
+    path: '/outbox',
+    component: OutboxPageComponent,
+  },
+  {
+    path: '/auth',
+    component: AuthPageComponent,
+  },
+  {
+    path: '/applicant',
+    component: ApplicantHomePageComponent,
+    meta: { requiresApplicant: true },
   },
 ];
 

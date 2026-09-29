@@ -28,16 +28,39 @@ export interface DataLayer {
   listDocuments(): Promise<StoredDocument[]>;
   /** Demo coordinator sign-in against the seeded accounts (ADR-05). Returns the user, or undefined if nothing matches. */
   signIn(email: string, password: string): Row | undefined;
+  /**
+   * Applicant magic link (ADR-05). If the email belongs to an applicant, writes a
+   * sign-in link to the in-app outbox (ADR-06). Returns whether a link was sent.
+   */
+  requestSignInLink(email: string, next?: string): boolean;
+  signInWithLink(token: string): SignInWithLinkResult;
   signOut(): void;
   getSignedInUser(): Row | undefined;
   /** Loads the seed on first start only. Returns true when the seed was loaded. */
   loadSeed(getSeedFiles: () => Promise<SeedFiles>, today?: Date): Promise<boolean>;
 }
 
+export type SignInWithLinkResult = { ok: true; user: Row; next: string } | { ok: false; reason: string };
+
 export const dataLayerKey: InjectionKey<DataLayer> = Symbol('dataLayer');
 
 /** Holds the one signed-in user id; kept like other data so a reload stays signed in. */
 const SESSION_TABLE = 'session';
+
+/** Magic-link tokens. Written directly, not through `insert`, so tokens never appear in the audit log. */
+const SIGN_IN_LINKS_TABLE = 'sign_in_links';
+
+const DEFAULT_APPLICANT_ROUTE = '/applicant';
+
+/** Only in-app routes are allowed as a link's destination. */
+function safeNextRoute(next: string | undefined): string {
+  return next && next.startsWith('/') && !next.startsWith('//') ? next : DEFAULT_APPLICANT_ROUTE;
+}
+
+/** Builds the hash link an applicant follows to sign in. */
+export function signInLinkPath(token: string, next: string): string {
+  return `/auth?token=${encodeURIComponent(token)}&next=${encodeURIComponent(next)}`;
+}
 
 export const AUDIT_TABLE = 'audit_events';
 
@@ -213,12 +236,74 @@ export function createDataLayer(backend: StorageBackend): DataLayer {
       return user;
     },
 
+    requestSignInLink: (email, next) => {
+      const user = backend
+        .readTable('users')
+        .find((row) => row.role === 'applicant' && row.email.toLowerCase() === email.trim().toLowerCase());
+      if (!user) {
+        return false;
+      }
+
+      const settings = backend.readTable('settings');
+      const windowDays = Number(settings.find((row) => row.key === 'resume_window_days')?.value) || 7;
+      const now = new Date();
+      const expires = new Date(now);
+      expires.setDate(expires.getDate() + windowDays);
+
+      const token = crypto.randomUUID();
+      const target = safeNextRoute(next);
+      backend.writeTable(SIGN_IN_LINKS_TABLE, [
+        ...backend.readTable(SIGN_IN_LINKS_TABLE),
+        {
+          id: token,
+          token,
+          user_id: user.id,
+          next: target,
+          created_at: formatLocalDateTime(now),
+          expires_at: formatLocalDateTime(expires),
+        },
+      ]);
+
+      // The notification service is T27; until then the link is written to the outbox here.
+      const firstName = user.display_name.split(' ')[0];
+      const notification: Row = {
+        agency_id: user.agency_id,
+        recipient_user_id: user.id,
+        caregiver_id: user.caregiver_id,
+        channel: 'email',
+        subject: 'Your CareMatch sign-in link',
+        body:
+          `Hi ${firstName}, use this link to sign in and continue your application. ` +
+          `It works for ${windowDays} days: #${signInLinkPath(token, target)}`,
+        created_at: formatLocalDateTime(now),
+      };
+      const inserted = { ...notification, id: crypto.randomUUID() };
+      backend.writeTable('notifications', [...backend.readTable('notifications'), inserted]);
+      appendAuditEvent({ role: 'system', name: 'CareMatch' }, 'Created', 'Sign-in link emailed', 'notifications', inserted);
+      return true;
+    },
+
+    signInWithLink: (token) => {
+      const link = backend.readTable(SIGN_IN_LINKS_TABLE).find((row) => row.token === token);
+      const user = link && backend.readTable('users').find((row) => row.id === link.user_id);
+      if (!link || !user) {
+        return { ok: false, reason: "This sign-in link isn't valid. Please request a new one." };
+      }
+      if (link.expires_at < formatLocalDateTime(new Date())) {
+        return { ok: false, reason: 'This sign-in link has expired. Please request a new one.' };
+      }
+      backend.writeTable(SESSION_TABLE, [{ id: 'current', user_id: user.id }]);
+      appendAuditEvent({ role: 'applicant', name: user.display_name }, 'Signed in', 'Email link', 'users', user);
+      return { ok: true, user, next: link.next };
+    },
+
     signOut: () => {
       const userId = backend.readTable(SESSION_TABLE)[0]?.user_id;
       const user = backend.readTable('users').find((row) => row.id === userId);
       backend.writeTable(SESSION_TABLE, []);
       if (user) {
-        appendAuditEvent({ role: 'coordinator', name: user.display_name }, 'Signed out', '', 'users', user);
+        const role = user.role === 'applicant' ? 'applicant' : 'coordinator';
+        appendAuditEvent({ role, name: user.display_name }, 'Signed out', '', 'users', user);
       }
     },
 
