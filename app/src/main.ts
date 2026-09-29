@@ -9,7 +9,7 @@ import App from './App.vue';
 import router from './router';
 import { createBrowserBackend } from './data/browserBackend';
 import { createDataLayer, createSystemDataLayer, dataLayerKey } from './data/dataLayer';
-import { runDelayedCheckJob } from './data/jobs';
+import { runDelayedCheckJob, runExpirationJob } from './data/jobs';
 import { fetchSeedFiles } from './data/seed';
 import { sessionKey } from './session';
 
@@ -21,7 +21,9 @@ const dataLayer = createDataLayer(backend);
 dataLayer
   .loadSeed(fetchSeedFiles)
   .then(() => {
-    runDelayedCheckJob(createSystemDataLayer(backend), new Date());
+    const systemDataLayer = createSystemDataLayer(backend);
+    runDelayedCheckJob(systemDataLayer, new Date());
+    runExpirationJob(systemDataLayer, new Date());
   })
   .catch((error) => {
     console.error('There was a problem loading the demo seed data.', error);
