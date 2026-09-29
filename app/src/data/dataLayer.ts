@@ -160,7 +160,11 @@ function agencyOf(table: string, row: Row, backend: StorageBackend): string | un
   return undefined;
 }
 
-/** The data layer screens use: a signed-in coordinator reads and writes only their own agency's data (R4). */
+/**
+ * The data layer screens use: a signed-in coordinator reads and writes only
+ * their own agency's data, and a signed-in applicant only their own
+ * application (R4, R6).
+ */
 export function createDataLayer(backend: StorageBackend): DataLayer {
   return buildDataLayer(backend, true);
 }
@@ -173,28 +177,73 @@ export function createSystemDataLayer(backend: StorageBackend): DataLayer {
   return buildDataLayer(backend, false);
 }
 
-function buildDataLayer(backend: StorageBackend, agencyFiltered: boolean): DataLayer {
-  /** The signed-in coordinator's agency, or undefined when no coordinator filter applies. */
-  function coordinatorAgency(): string | undefined {
-    if (!agencyFiltered) {
+/** Internal compliance records applicants never see; their item statuses cover R6. */
+const HIDDEN_FROM_APPLICANTS = ['check_orders', AUDIT_TABLE];
+
+/**
+ * Whether a row belongs to this applicant's own application (R4, R6): their
+ * caregiver record and its rows, messages sent to them, their own account and
+ * agency, and the shared tables.
+ */
+function isApplicantRow(table: string, row: Row, applicant: Row): boolean {
+  if (SHARED_TABLES.includes(table)) {
+    return true;
+  }
+  if (HIDDEN_FROM_APPLICANTS.includes(table)) {
+    return false;
+  }
+  switch (table) {
+    case 'caregivers':
+      return row.id === applicant.caregiver_id;
+    case 'users':
+      return row.id === applicant.id;
+    case 'agencies':
+      return row.id === applicant.agency_id;
+    case 'notifications':
+      return row.recipient_user_id === applicant.id;
+    default:
+      return Boolean(row.caregiver_id) && row.caregiver_id === applicant.caregiver_id;
+  }
+}
+
+type Viewer = { role: 'coordinator'; agency: string } | { role: 'applicant'; user: Row };
+
+function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
+  /** Who is reading: a signed-in coordinator or applicant, or undefined when no filter applies. */
+  function viewer(): Viewer | undefined {
+    if (!filtered) {
       return undefined;
     }
     const userId = backend.readTable(SESSION_TABLE)[0]?.user_id;
     const user = backend.readTable('users').find((row) => row.id === userId);
-    return user?.role === 'coordinator' ? user.agency_id : undefined;
+    if (user?.role === 'coordinator') {
+      return { role: 'coordinator', agency: user.agency_id };
+    }
+    if (user?.role === 'applicant') {
+      return { role: 'applicant', user };
+    }
+    return undefined;
   }
 
-  function isVisible(table: string, row: Row, agency: string | undefined): boolean {
-    if (!agency) {
+  function isVisible(table: string, row: Row, reader: Viewer | undefined): boolean {
+    if (!reader) {
       return true;
     }
+    if (reader.role === 'applicant') {
+      return isApplicantRow(table, row, reader.user);
+    }
     const owner = agencyOf(table, row, backend);
-    return owner === agency || owner === SHARED;
+    return owner === reader.agency || owner === SHARED;
   }
 
-  function refuseOtherAgencyWrite(table: string, row: Row): void {
-    if (!isVisible(table, row, coordinatorAgency())) {
-      throw new Error('You can only change records for your own agency.');
+  function refuseOutOfScopeWrite(table: string, row: Row): void {
+    const reader = viewer();
+    if (!isVisible(table, row, reader)) {
+      throw new Error(
+        reader?.role === 'applicant'
+          ? 'You can only change your own application.'
+          : 'You can only change records for your own agency.',
+      );
     }
   }
 
@@ -229,8 +278,8 @@ function buildDataLayer(backend: StorageBackend, agencyFiltered: boolean): DataL
     }
     const before = rows[index];
     const updated = { ...before, ...changes, id };
-    refuseOtherAgencyWrite(table, before);
-    refuseOtherAgencyWrite(table, updated);
+    refuseOutOfScopeWrite(table, before);
+    refuseOutOfScopeWrite(table, updated);
     rows[index] = updated;
     backend.writeTable(table, rows);
     appendAuditEvent(actor, 'Updated', describeChanges(before, updated), table, updated);
@@ -240,14 +289,14 @@ function buildDataLayer(backend: StorageBackend, agencyFiltered: boolean): DataL
   return {
     list: (table) => {
       refuseVaultRead(table);
-      const agency = coordinatorAgency();
-      return backend.readTable(table).filter((row) => isVisible(table, row, agency));
+      const reader = viewer();
+      return backend.readTable(table).filter((row) => isVisible(table, row, reader));
     },
 
     get: (table, id) => {
       refuseVaultRead(table);
       const row = backend.readTable(table).find((candidate) => candidate.id === id);
-      return row && isVisible(table, row, coordinatorAgency()) ? row : undefined;
+      return row && isVisible(table, row, viewer()) ? row : undefined;
     },
 
     insert: (table, row, actor) => {
@@ -255,7 +304,7 @@ function buildDataLayer(backend: StorageBackend, agencyFiltered: boolean): DataL
       refuseSsnWrite(table, row);
       const rows = backend.readTable(table);
       const inserted = { ...row, id: row.id || crypto.randomUUID() };
-      refuseOtherAgencyWrite(table, inserted);
+      refuseOutOfScopeWrite(table, inserted);
       if (rows.some((existing) => existing.id === inserted.id)) {
         throw new Error(`A ${table} row with id ${inserted.id} already exists.`);
       }
@@ -271,7 +320,7 @@ function buildDataLayer(backend: StorageBackend, agencyFiltered: boolean): DataL
       if (!caregiver) {
         throw new Error(`No caregivers row with id ${caregiverId}.`);
       }
-      refuseOtherAgencyWrite('caregivers', caregiver);
+      refuseOutOfScopeWrite('caregivers', caregiver);
       const entry = newVaultEntry(caregiverId, ssn);
       const otherEntries = backend.readTable(VAULT_TABLE).filter((row) => row.caregiver_id !== caregiverId);
       backend.writeTable(VAULT_TABLE, [...otherEntries, entry]);

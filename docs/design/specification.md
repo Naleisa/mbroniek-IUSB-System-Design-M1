@@ -191,7 +191,7 @@ Patterns:
 ## 6. Constraints & Non-Functional Requirements
 
 -  **Performance:**
-	- Interaction time is acceptable on low-end Android phone over 3g
+	- Interaction time is acceptable on low-end Android phone over 3g: on Chrome DevTools Slow 3G, each intake step loads in 5 seconds or less and a compressed photo upload saves in 10 seconds or less
 	- Max upload size and accepted formats
 	- Behavior on an interrupted upload
 	- Export generation time for single caregiver vs full roster
