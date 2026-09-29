@@ -1,4 +1,5 @@
 import type { DataLayer } from './dataLayer';
+import { transitionCaregiver } from './lifecycle';
 import { formatLocalDateTime } from './relativeDates';
 import type { Row } from './storageBackend';
 import type { Actor } from './types';
@@ -75,7 +76,8 @@ function toDateOnly(date: Date): string {
  * days out) and Expired once their date has passed (R15, C6). An item is still valid on
  * its expiration date. When an item becomes Expiring or Expired, the caregiver and their
  * agency's coordinators are emailed through the outbox. If the demo date moves back,
- * items return to the status that fits the date, without a notification. Returns the
+ * items return to the status that fits the date, without a notification. Then any
+ * Cleared record with an Expired item moves to Not Current (ADR-19). Returns the
  * changed item ids.
  */
 export function runExpirationJob(systemDataLayer: DataLayer, today: Date): string[] {
@@ -105,7 +107,51 @@ export function runExpirationJob(systemDataLayer: DataLayer, today: Date): strin
       notifyExpiration(systemDataLayer, item, status, formatLocalDateTime(today));
     }
   }
+  markExpiredRecordsNotCurrent(systemDataLayer, formatLocalDateTime(today));
   return changed;
+}
+
+/**
+ * Moves every Cleared record with an Expired item to Not Current and emails the
+ * coordinators (ADR-19, C2, R14). Only a coordinator can return it to Cleared (T48),
+ * so moving the demo date back leaves the record Not Current.
+ */
+function markExpiredRecordsNotCurrent(systemDataLayer: DataLayer, createdAt: string): void {
+  const items = systemDataLayer.list('required_items');
+  const templateItems = systemDataLayer.list('template_items');
+
+  for (const caregiver of systemDataLayer.list('caregivers')) {
+    if (caregiver.lifecycle_state !== 'Cleared') {
+      continue;
+    }
+    const expired = items.filter((item) => item.caregiver_id === caregiver.id && item.status === 'Expired');
+    if (expired.length === 0 || !transitionCaregiver(systemDataLayer, caregiver.id, 'Not Current', SYSTEM).ok) {
+      continue;
+    }
+
+    const caregiverName = `${caregiver.first_name} ${caregiver.last_name}`;
+    const expiredList = expired
+      .map((item) => {
+        const name = templateItems.find((templateItem) => templateItem.item_key === item.item_key)?.name ?? item.item_key;
+        return `${name} expired on ${item.expiration_date}`;
+      })
+      .join('; ');
+    const coordinators = systemDataLayer
+      .list('users')
+      .filter((user) => user.role === 'coordinator' && user.agency_id === caregiver.agency_id);
+    for (const coordinator of coordinators) {
+      const notification: Row = {
+        agency_id: caregiver.agency_id,
+        recipient_user_id: coordinator.id,
+        caregiver_id: caregiver.id,
+        channel: 'email',
+        subject: `${caregiverName} is Not Current`,
+        body: `${caregiverName} is Not Current: ${expiredList}. They shouldn't be scheduled until a replacement is verified.`,
+        created_at: createdAt,
+      };
+      systemDataLayer.insert('notifications', notification, SYSTEM);
+    }
+  }
 }
 
 /** Emails the caregiver and their agency's coordinators about an Expiring or Expired item (R15, Scenario 3). */

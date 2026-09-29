@@ -70,7 +70,8 @@ describe('expiration job (R15, C6, ADR-13)', () => {
     });
 
     runExpirationJob(systemDataLayer, TODAY);
-    const sent = newNotifications().filter((row) => row.caregiver_id === 'cg-06');
+    // Robert is Cleared, so the expired license also sends a Not Current email (T26); only expiration emails are checked here.
+    const sent = newNotifications().filter((row) => row.caregiver_id === 'cg-06' && !row.subject.endsWith('is Not Current'));
 
     expect(sent.map((row) => [row.recipient_user_id, row.subject]).sort()).toEqual(
       [
