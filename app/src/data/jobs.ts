@@ -1,5 +1,6 @@
 import type { DataLayer } from './dataLayer';
 import { transitionCaregiver } from './lifecycle';
+import { coordinatorsOf, sendEmail } from './notifications';
 import { formatLocalDateTime } from './relativeDates';
 import type { Row } from './storageBackend';
 import type { Actor } from './types';
@@ -104,10 +105,10 @@ export function runExpirationJob(systemDataLayer: DataLayer, today: Date): strin
     changed.push(item.id);
     // Only a move forward (toward Expired) notifies; moving the demo date back does not.
     if (DATED_STATUSES.indexOf(status) > DATED_STATUSES.indexOf(item.status)) {
-      notifyExpiration(systemDataLayer, item, status, formatLocalDateTime(today));
+      notifyExpiration(systemDataLayer, item, status, today);
     }
   }
-  markExpiredRecordsNotCurrent(systemDataLayer, formatLocalDateTime(today));
+  markExpiredRecordsNotCurrent(systemDataLayer, today);
   return changed;
 }
 
@@ -116,7 +117,7 @@ export function runExpirationJob(systemDataLayer: DataLayer, today: Date): strin
  * coordinators (ADR-19, C2, R14). Only a coordinator can return it to Cleared (T48),
  * so moving the demo date back leaves the record Not Current.
  */
-function markExpiredRecordsNotCurrent(systemDataLayer: DataLayer, createdAt: string): void {
+function markExpiredRecordsNotCurrent(systemDataLayer: DataLayer, today: Date): void {
   const items = systemDataLayer.list('required_items');
   const templateItems = systemDataLayer.list('template_items');
 
@@ -136,26 +137,24 @@ function markExpiredRecordsNotCurrent(systemDataLayer: DataLayer, createdAt: str
         return `${name} expired on ${item.expiration_date}`;
       })
       .join('; ');
-    const coordinators = systemDataLayer
-      .list('users')
-      .filter((user) => user.role === 'coordinator' && user.agency_id === caregiver.agency_id);
-    for (const coordinator of coordinators) {
-      const notification: Row = {
-        agency_id: caregiver.agency_id,
-        recipient_user_id: coordinator.id,
-        caregiver_id: caregiver.id,
-        channel: 'email',
-        subject: `${caregiverName} is Not Current`,
-        body: `${caregiverName} is Not Current: ${expiredList}. They shouldn't be scheduled until a replacement is verified.`,
-        created_at: createdAt,
-      };
-      systemDataLayer.insert('notifications', notification, SYSTEM);
+    for (const coordinator of coordinatorsOf(systemDataLayer, caregiver.agency_id)) {
+      sendEmail(
+        systemDataLayer,
+        {
+          recipient_user_id: coordinator.id,
+          agency_id: caregiver.agency_id,
+          caregiver_id: caregiver.id,
+          subject: `${caregiverName} is Not Current`,
+          body: `${caregiverName} is Not Current: ${expiredList}. They shouldn't be scheduled until a replacement is verified.`,
+        },
+        today,
+      );
     }
   }
 }
 
 /** Emails the caregiver and their agency's coordinators about an Expiring or Expired item (R15, Scenario 3). */
-function notifyExpiration(systemDataLayer: DataLayer, item: Row, status: string, createdAt: string): void {
+function notifyExpiration(systemDataLayer: DataLayer, item: Row, status: string, today: Date): void {
   const caregiver = systemDataLayer.get('caregivers', item.caregiver_id);
   if (!caregiver) {
     return;
@@ -167,28 +166,26 @@ function notifyExpiration(systemDataLayer: DataLayer, item: Row, status: string,
   const date = item.expiration_date;
   const expired = status === 'Expired';
 
-  const recipients = systemDataLayer
-    .list('users')
-    .filter(
-      (user) =>
-        user.caregiver_id === caregiver.id ||
-        (user.role === 'coordinator' && user.agency_id === caregiver.agency_id),
-    );
+  const recipients = [
+    ...systemDataLayer.list('users').filter((user) => user.caregiver_id === caregiver.id),
+    ...coordinatorsOf(systemDataLayer, caregiver.agency_id),
+  ];
   for (const user of recipients) {
     const toCaregiver = user.caregiver_id === caregiver.id;
-    const notification: Row = {
-      agency_id: caregiver.agency_id,
-      recipient_user_id: user.id,
-      caregiver_id: caregiver.id,
-      channel: 'email',
-      subject: toCaregiver
-        ? `Your ${itemName} ${expired ? 'has expired' : 'expires soon'}`
-        : `${itemName} ${expired ? 'expired' : 'expiring'} for ${caregiverName}`,
-      body: toCaregiver
-        ? `Your ${itemName} ${expired ? 'expired' : 'expires'} on ${date}. Your agency will ask you for a replacement.`
-        : `${caregiverName}'s ${itemName} ${expired ? 'expired' : 'expires'} on ${date}.`,
-      created_at: createdAt,
-    };
-    systemDataLayer.insert('notifications', notification, SYSTEM);
+    sendEmail(
+      systemDataLayer,
+      {
+        recipient_user_id: user.id,
+        agency_id: caregiver.agency_id,
+        caregiver_id: caregiver.id,
+        subject: toCaregiver
+          ? `Your ${itemName} ${expired ? 'has expired' : 'expires soon'}`
+          : `${itemName} ${expired ? 'expired' : 'expiring'} for ${caregiverName}`,
+        body: toCaregiver
+          ? `Your ${itemName} ${expired ? 'expired' : 'expires'} on ${date}. Your agency will ask you for a replacement.`
+          : `${caregiverName}'s ${itemName} ${expired ? 'expired' : 'expires'} on ${date}.`,
+      },
+      today,
+    );
   }
 }

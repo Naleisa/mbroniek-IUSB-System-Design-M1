@@ -1,5 +1,6 @@
 import Papa from 'papaparse';
 import type { InjectionKey } from 'vue';
+import { sendEmail } from './notifications';
 import { formatLocalDateTime, resolveRelativeDate } from './relativeDates';
 import type { SeedFiles } from './seed';
 import type { Row, StorageBackend, StoredDocument } from './storageBackend';
@@ -415,22 +416,21 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
         },
       ]);
 
-      // The notification service is T27; until then the link is written to the outbox here.
+      // Sent as CareMatch through the notification service; the audit log never holds the link itself.
       const firstName = user.display_name.split(' ')[0];
-      const notification: Row = {
-        agency_id: user.agency_id,
-        recipient_user_id: user.id,
-        caregiver_id: user.caregiver_id,
-        channel: 'email',
-        subject: 'Your CareMatch sign-in link',
-        body:
-          `Hi ${firstName}, use this link to sign in and continue your application. ` +
-          `It works for ${windowDays} days: #${signInLinkPath(token, target)}`,
-        created_at: formatLocalDateTime(now),
-      };
-      const inserted = { ...notification, id: crypto.randomUUID() };
-      backend.writeTable('notifications', [...backend.readTable('notifications'), inserted]);
-      appendAuditEvent({ role: 'system', name: 'CareMatch' }, 'Created', 'Sign-in link emailed', 'notifications', inserted);
+      sendEmail(
+        createSystemDataLayer(backend),
+        {
+          recipient_user_id: user.id,
+          agency_id: user.agency_id,
+          caregiver_id: user.caregiver_id,
+          subject: 'Your CareMatch sign-in link',
+          body:
+            `Hi ${firstName}, use this link to sign in and continue your application. ` +
+            `It works for ${windowDays} days: #${signInLinkPath(token, target)}`,
+        },
+        now,
+      );
       return true;
     },
 

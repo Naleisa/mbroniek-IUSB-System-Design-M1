@@ -1,5 +1,6 @@
 import type { DataLayer } from './dataLayer';
 import { checkEligibility, transitionCaregiver } from './lifecycle';
+import { coordinatorsOf, sendEmail } from './notifications';
 import { formatLocalDateTime } from './relativeDates';
 import type { Row, StorageBackend } from './storageBackend';
 import type { Actor } from './types';
@@ -145,25 +146,23 @@ function recordResult(systemDataLayer: DataLayer, itemId: string, orderId: strin
     systemDataLayer.list('template_items').find((templateItem) => templateItem.item_key === item.item_key)?.name ??
     item.item_key;
   const caregiverName = `${caregiver.first_name} ${caregiver.last_name}`;
-  const coordinators = systemDataLayer
-    .list('users')
-    .filter((user) => user.role === 'coordinator' && user.agency_id === caregiver.agency_id);
-  for (const coordinator of coordinators) {
-    const notification: Row = {
-      agency_id: caregiver.agency_id,
-      recipient_user_id: coordinator.id,
-      caregiver_id: caregiver.id,
-      channel: 'email',
-      subject: `${itemName} result for ${caregiverName}: ${resultLabel}`,
-      body: {
-        clear: `${vendorResult.vendor} returned ${resultLabel} for ${caregiverName}. The item is now Verified.`,
-        failure: `${vendorResult.vendor} could not complete the check for ${caregiverName}. Order it again from their record.`,
-        match: `${vendorResult.vendor} found a possible match for ${caregiverName}. A coordinator needs to review the record.`,
-        unavailable: `${vendorResult.vendor} is unavailable, so ${itemName} for ${caregiverName} needs to be verified by hand.`,
-      }[vendorResult.outcome],
-      created_at: completedAt,
-    };
-    systemDataLayer.insert('notifications', notification, SYSTEM);
+  for (const coordinator of coordinatorsOf(systemDataLayer, caregiver.agency_id)) {
+    sendEmail(
+      systemDataLayer,
+      {
+        recipient_user_id: coordinator.id,
+        agency_id: caregiver.agency_id,
+        caregiver_id: caregiver.id,
+        subject: `${itemName} result for ${caregiverName}: ${resultLabel}`,
+        body: {
+          clear: `${vendorResult.vendor} returned ${resultLabel} for ${caregiverName}. The item is now Verified.`,
+          failure: `${vendorResult.vendor} could not complete the check for ${caregiverName}. Order it again from their record.`,
+          match: `${vendorResult.vendor} found a possible match for ${caregiverName}. A coordinator needs to review the record.`,
+          unavailable: `${vendorResult.vendor} is unavailable, so ${itemName} for ${caregiverName} needs to be verified by hand.`,
+        }[vendorResult.outcome],
+      },
+      now,
+    );
   }
 
   if (vendorResult.outcome === 'clear') {
