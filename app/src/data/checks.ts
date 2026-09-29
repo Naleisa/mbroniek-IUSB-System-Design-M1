@@ -1,10 +1,16 @@
 import type { DataLayer } from './dataLayer';
-import { checkEligibility } from './lifecycle';
+import { checkEligibility, transitionCaregiver } from './lifecycle';
 import { formatLocalDateTime } from './relativeDates';
 import type { Row, StorageBackend } from './storageBackend';
 import type { Actor } from './types';
 import { createVendorVault } from './vault';
-import { createMockBackgroundCheck, type VendorAdapter, type VendorResult } from './vendors';
+import {
+  createMockBackgroundCheck,
+  createMockExclusionCheck,
+  type ExclusionList,
+  type VendorAdapter,
+  type VendorResult,
+} from './vendors';
 
 const SYSTEM: Actor = { role: 'system', name: 'CareMatch' };
 
@@ -16,11 +22,19 @@ const CHECK_VALID_DAYS = 365;
 
 export type OrderCheckResult = { ok: true; result: Promise<VendorResult> } | { ok: false; reason: string };
 
+function mockVendorDelaySeconds(backend: StorageBackend): number {
+  const settings = backend.readTable('settings');
+  return Number(settings.find((row) => row.key === 'mock_vendor_delay_seconds')?.value) || 10;
+}
+
 /** Creates the mock background check vendor with the vault reader and the delay from settings (ADR-11, ADR-12). */
 export function createBackgroundCheckVendor(backend: StorageBackend): VendorAdapter {
-  const settings = backend.readTable('settings');
-  const delaySeconds = Number(settings.find((row) => row.key === 'mock_vendor_delay_seconds')?.value) || 10;
-  return createMockBackgroundCheck(createVendorVault(backend), delaySeconds);
+  return createMockBackgroundCheck(createVendorVault(backend), mockVendorDelaySeconds(backend));
+}
+
+/** Creates the mock OIG or SAM exclusion vendor with the vault reader and the delay from settings (R19, ADR-12). */
+export function createExclusionCheckVendor(backend: StorageBackend, list: ExclusionList): VendorAdapter {
+  return createMockExclusionCheck(createVendorVault(backend), mockVendorDelaySeconds(backend), list);
 }
 
 /**
@@ -59,7 +73,11 @@ export function orderCheck(
   return { ok: true, result };
 }
 
-/** Attaches a vendor result to the item and its order, notifies the coordinators, and checks eligibility (R10, R21). */
+/**
+ * Attaches a vendor result to the item and its order and notifies the coordinators (R10).
+ * A Clear checks eligibility (R12), a failure leaves the order retryable (R21), and an
+ * exclusion match sends the record to Review Required (R19).
+ */
 function recordResult(systemDataLayer: DataLayer, itemId: string, orderId: string, vendorResult: VendorResult): void {
   const now = new Date();
   const completedAt = formatLocalDateTime(now);
@@ -96,8 +114,14 @@ function recordResult(systemDataLayer: DataLayer, itemId: string, orderId: strin
       SYSTEM,
     );
   } else {
-    // An exclusion match is handled by the exclusion check (T22).
-    return;
+    resultLabel = 'Possible match';
+    systemDataLayer.update(
+      'required_items',
+      itemId,
+      { status: 'Manual Verification', result: resultLabel, notes: vendorResult.detail },
+      SYSTEM,
+    );
+    transitionCaregiver(systemDataLayer, caregiver.id, 'Review Required', SYSTEM);
   }
   systemDataLayer.update('check_orders', orderId, { completed_at: completedAt, result: resultLabel }, SYSTEM);
 
@@ -115,10 +139,11 @@ function recordResult(systemDataLayer: DataLayer, itemId: string, orderId: strin
       caregiver_id: caregiver.id,
       channel: 'email',
       subject: `${itemName} result for ${caregiverName}: ${resultLabel}`,
-      body:
-        vendorResult.outcome === 'clear'
-          ? `${vendorResult.vendor} returned Clear for ${caregiverName}. The item is now Verified.`
-          : `${vendorResult.vendor} could not complete the check for ${caregiverName}. Order it again from their record.`,
+      body: {
+        clear: `${vendorResult.vendor} returned Clear for ${caregiverName}. The item is now Verified.`,
+        failure: `${vendorResult.vendor} could not complete the check for ${caregiverName}. Order it again from their record.`,
+        match: `${vendorResult.vendor} found a possible match for ${caregiverName}. A coordinator needs to review the record.`,
+      }[vendorResult.outcome],
       created_at: completedAt,
     };
     systemDataLayer.insert('notifications', notification, SYSTEM);
