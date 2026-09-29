@@ -52,7 +52,7 @@ describe('agency filter for coordinators (R4, C7)', () => {
     expect(dataLayer.list('users').every((user) => user.agency_id === 'agency-a')).toBe(true);
     // Shared tables stay visible to every agency.
     expect(dataLayer.list('template_items')).toHaveLength(8);
-    expect(dataLayer.list('settings')).toHaveLength(4);
+    expect(dataLayer.list('settings')).toHaveLength(5);
   });
 
   it('shows Agency B coordinator only their own caregivers', async () => {

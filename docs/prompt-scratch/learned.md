@@ -25,3 +25,5 @@ T59 found issues with the way we were planning on clearing data.  Cleared up som
 T20 made me realize there's no context for the demo user on how to demo SSN test returns.  Requested the addition of a tap hint icon to recommend demo numbers.
 
 T22 after completion, added a task for the end to write UAT steps and acceptance criteria for step.
+
+T23 introduced an option question regarding manual verification.  cleared up the open question.

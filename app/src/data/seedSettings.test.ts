@@ -18,15 +18,16 @@ function settingValue(rows: Record<string, string>[], key: string): string | und
 }
 
 describe('seeded settings, agencies, and coordinators', () => {
-  it('reads all four settings from settings.csv', async () => {
+  it('reads all five settings from settings.csv', async () => {
     const dataLayer = await loadFreshSeed({ settings: settingsCsv });
     const settings = dataLayer.list('settings');
 
-    expect(settings).toHaveLength(4);
+    expect(settings).toHaveLength(5);
     expect(settingValue(settings, 'warning_window_days')).toBe('30');
     expect(settingValue(settings, 'delayed_threshold_business_days')).toBe('3');
     expect(settingValue(settings, 'resume_window_days')).toBe('7');
     expect(settingValue(settings, 'mock_vendor_delay_seconds')).toBe('10');
+    expect(settingValue(settings, 'state_registry_available')).toBe('true');
   });
 
   it('reads both agencies, each with one coordinator', async () => {

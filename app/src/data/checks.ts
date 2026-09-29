@@ -7,6 +7,7 @@ import { createVendorVault } from './vault';
 import {
   createMockBackgroundCheck,
   createMockExclusionCheck,
+  createMockRegistryCheck,
   type ExclusionList,
   type VendorAdapter,
   type VendorResult,
@@ -17,7 +18,10 @@ const SYSTEM: Actor = { role: 'system', name: 'CareMatch' };
 /** Items in these statuses can be ordered: a first order, or a retry after a failure (R21). */
 const ORDERABLE_STATUSES = ['Pending', 'Retryable'];
 
-/** How long a verified check stays current. A demo assumption until real rules are set (Spec Q1). */
+/**
+ * How long a verified background or exclusion check stays current. A demo assumption
+ * until real rules are set (Spec Q1). Registry results keep the certificate's own date.
+ */
 const CHECK_VALID_DAYS = 365;
 
 export type OrderCheckResult = { ok: true; result: Promise<VendorResult> } | { ok: false; reason: string };
@@ -35,6 +39,16 @@ export function createBackgroundCheckVendor(backend: StorageBackend): VendorAdap
 /** Creates the mock OIG or SAM exclusion vendor with the vault reader and the delay from settings (R19, ADR-12). */
 export function createExclusionCheckVendor(backend: StorageBackend, list: ExclusionList): VendorAdapter {
   return createMockExclusionCheck(createVendorVault(backend), mockVendorDelaySeconds(backend), list);
+}
+
+/**
+ * Creates the mock state registry vendor (R26). Whether the registry is available comes
+ * from the `state_registry_available` setting, so it can be changed without a code change.
+ */
+export function createRegistryCheckVendor(backend: StorageBackend): VendorAdapter {
+  const settings = backend.readTable('settings');
+  const isAvailable = settings.find((row) => row.key === 'state_registry_available')?.value !== 'false';
+  return createMockRegistryCheck(createVendorVault(backend), mockVendorDelaySeconds(backend), isAvailable);
 }
 
 /**
@@ -75,8 +89,9 @@ export function orderCheck(
 
 /**
  * Attaches a vendor result to the item and its order and notifies the coordinators (R10).
- * A Clear checks eligibility (R12), a failure leaves the order retryable (R21), and an
- * exclusion match sends the record to Review Required (R19).
+ * A clean result checks eligibility (R12), a failure leaves the order retryable (R21),
+ * an exclusion match sends the record to Review Required (R19), and an unavailable
+ * registry leaves the item for a manual verification (R26).
  */
 function recordResult(systemDataLayer: DataLayer, itemId: string, orderId: string, vendorResult: VendorResult): void {
   const now = new Date();
@@ -87,26 +102,26 @@ function recordResult(systemDataLayer: DataLayer, itemId: string, orderId: strin
     return;
   }
 
-  let resultLabel: string;
+  const resultLabel = vendorResult.label;
   if (vendorResult.outcome === 'clear') {
+    // A registry lookup confirms the uploaded certificate, so it keeps that certificate's expiration date.
+    const isRegistry = item.method === 'Registry lookup';
     const expires = new Date(now);
     expires.setDate(expires.getDate() + CHECK_VALID_DAYS);
-    resultLabel = 'Clear';
     systemDataLayer.update(
       'required_items',
       itemId,
       {
         status: 'Verified',
         verified_date: completedAt.slice(0, 10),
-        expiration_date: formatLocalDateTime(expires).slice(0, 10),
+        expiration_date: isRegistry ? item.expiration_date : formatLocalDateTime(expires).slice(0, 10),
         result: resultLabel,
-        evidence: `Mock vendor result ${vendorResult.reference}`,
+        evidence: `Mock ${isRegistry ? 'registry' : 'vendor'} result ${vendorResult.reference}`,
         notes: '',
       },
       SYSTEM,
     );
   } else if (vendorResult.outcome === 'failure') {
-    resultLabel = 'Vendor failure';
     systemDataLayer.update(
       'required_items',
       itemId,
@@ -114,14 +129,15 @@ function recordResult(systemDataLayer: DataLayer, itemId: string, orderId: strin
       SYSTEM,
     );
   } else {
-    resultLabel = 'Possible match';
     systemDataLayer.update(
       'required_items',
       itemId,
       { status: 'Manual Verification', result: resultLabel, notes: vendorResult.detail },
       SYSTEM,
     );
-    transitionCaregiver(systemDataLayer, caregiver.id, 'Review Required', SYSTEM);
+    if (vendorResult.outcome === 'match') {
+      transitionCaregiver(systemDataLayer, caregiver.id, 'Review Required', SYSTEM);
+    }
   }
   systemDataLayer.update('check_orders', orderId, { completed_at: completedAt, result: resultLabel }, SYSTEM);
 
@@ -140,9 +156,10 @@ function recordResult(systemDataLayer: DataLayer, itemId: string, orderId: strin
       channel: 'email',
       subject: `${itemName} result for ${caregiverName}: ${resultLabel}`,
       body: {
-        clear: `${vendorResult.vendor} returned Clear for ${caregiverName}. The item is now Verified.`,
+        clear: `${vendorResult.vendor} returned ${resultLabel} for ${caregiverName}. The item is now Verified.`,
         failure: `${vendorResult.vendor} could not complete the check for ${caregiverName}. Order it again from their record.`,
         match: `${vendorResult.vendor} found a possible match for ${caregiverName}. A coordinator needs to review the record.`,
+        unavailable: `${vendorResult.vendor} is unavailable, so ${itemName} for ${caregiverName} needs to be verified by hand.`,
       }[vendorResult.outcome],
       created_at: completedAt,
     };

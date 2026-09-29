@@ -77,6 +77,7 @@ We will build a mobile-first, front-end-only web application as a working demo f
   - Delayed-check threshold: 3 business days (R20)
   - Resume link validity: 7 days (R8)
   - Mock vendor delay (ADR-12)
+  - Mock state registry available: true (R26)
 - Assumptions being made (unverified — confirm before real use):
   - ⚠️ The Indiana Home Health Aide requirements in the template are a sample and must be checked against current Indiana rules (Spec Q1).
   - ⚠️ Real background-check, exclusion, and registry vendors offer APIs that fit the shared adapter interface (Spec Q2).

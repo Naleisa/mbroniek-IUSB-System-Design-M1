@@ -29,7 +29,7 @@ The loader moves each SSN into the vault store and keeps only a token and the la
 |------|----------|
 | `agencies.csv` | The two demo agencies and their intake link slugs |
 | `users.csv` | One coordinator per agency (password `demo1234`) and an applicant login for each caregiver (magic link only) |
-| `settings.csv` | Warning window, delayed-check threshold, resume window, and mock vendor delay |
+| `settings.csv` | Warning window, delayed-check threshold, resume window, mock vendor delay, and whether the mock state registry is available |
 | `requirement_templates.csv` | The Indiana Home Health Aide template, marked as a sample |
 | `template_items.csv` | The template's required items, with the plain-language reason shown to applicants |
 | `caregivers.csv` | 13 caregivers, with at least one in each lifecycle state |
