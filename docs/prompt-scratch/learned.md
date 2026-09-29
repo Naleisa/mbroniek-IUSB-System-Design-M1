@@ -11,3 +11,5 @@ Before starting on Tasks 2 I went through and removed all playwright and Vitest 
 Task 5 had some serious confusion from claude that I had to answer multiple open questions.
 
 Task 6 found gaps in our seed documents.  Had it update with fake data to correct.
+
+Task 10 found gaps in our process of where a caregiver's status can go after review required.  Agreed with Claude's recommendations on this one for the requirements.
