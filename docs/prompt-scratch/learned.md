@@ -26,4 +26,4 @@ T20 made me realize there's no context for the demo user on how to demo SSN test
 
 T22 after completion, added a task for the end to write UAT steps and acceptance criteria for step.
 
-T23 introduced an option question regarding manual verification.  cleared up the open question.
+T23 introduced an option question regarding manual verification.  cleared up the open question and introduce T64 to implement it.  

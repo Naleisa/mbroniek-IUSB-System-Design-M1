@@ -170,3 +170,75 @@ function recordResult(systemDataLayer: DataLayer, itemId: string, orderId: strin
     checkEligibility(systemDataLayer, caregiver.id);
   }
 }
+
+export interface ManualVerification {
+  /** What the coordinator checked, such as "Called the state registry; certificate 12345 is active." */
+  note: string;
+  /** The item's expiration date as YYYY-MM-DD. Required so the item can expire (R14, C2). */
+  expirationDate: string;
+}
+
+export type VerifyManuallyResult = { ok: true; item: Row } | { ok: false; reason: string };
+
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
+
+function isRealDate(value: string): boolean {
+  if (!DATE_ONLY.test(value)) {
+    return false;
+  }
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day;
+}
+
+/**
+ * Lets a coordinator verify an item in Manual Verification by hand: an unavailable
+ * registry (R26), an unreadable document (R22), or a reviewed exclusion match (T46).
+ * The item keeps its source; the method, the coordinator's note, and the dates are
+ * recorded so the compliance report shows exactly how it was verified (R2, C1).
+ */
+export function verifyManually(
+  dataLayer: DataLayer,
+  requiredItemId: string,
+  verification: ManualVerification,
+  actor: Actor,
+): VerifyManuallyResult {
+  if (actor.role !== 'coordinator') {
+    return { ok: false, reason: 'Only a coordinator can verify an item by hand.' };
+  }
+  const item = dataLayer.get('required_items', requiredItemId);
+  if (!item) {
+    return { ok: false, reason: 'We could not find that item.' };
+  }
+  if (item.status !== 'Manual Verification') {
+    return { ok: false, reason: `Only items in Manual Verification can be verified by hand. This one is ${item.status}.` };
+  }
+  const note = verification.note.trim();
+  if (!note) {
+    return { ok: false, reason: 'Describe what you checked before marking this verified.' };
+  }
+  const today = formatLocalDateTime(new Date()).slice(0, 10);
+  if (!isRealDate(verification.expirationDate)) {
+    return { ok: false, reason: 'Enter the expiration date as a real date (YYYY-MM-DD).' };
+  }
+  if (verification.expirationDate < today) {
+    return { ok: false, reason: 'That expiration date has already passed, so this item cannot be marked verified.' };
+  }
+
+  const updated = dataLayer.update(
+    'required_items',
+    item.id,
+    {
+      status: 'Verified',
+      method: 'Manual verification',
+      verified_date: today,
+      expiration_date: verification.expirationDate,
+      result: 'Verified by hand',
+      evidence: note,
+      notes: '',
+    },
+    actor,
+  );
+  checkEligibility(dataLayer, item.caregiver_id);
+  return { ok: true, item: updated };
+}
