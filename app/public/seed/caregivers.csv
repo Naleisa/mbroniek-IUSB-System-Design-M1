@@ -1,0 +1,14 @@
+id,agency_id,template_id,first_name,last_name,email,phone,date_of_birth,ssn,lifecycle_state,created_at,state_changed_at
+cg-01,agency-a,tpl-in-hha,Maria,Gonzalez,maria.gonzalez@example.com,(574) 555-0101,1990-03-14,900-10-0001,Intake In Progress,today-1,today-1
+cg-02,agency-a,tpl-in-hha,James,Carter,james.carter@example.com,(574) 555-0102,1985-07-22,900-11-0001,Intake Complete,today-3,today-3
+cg-03,agency-a,tpl-in-hha,Aisha,Patel,aisha.patel@example.com,(574) 555-0103,1994-11-02,900-12-0003,Screening In Progress,today-9,today-8
+cg-04,agency-a,tpl-in-hha,Tom,Nguyen,tom.nguyen@example.com,(574) 555-0104,1988-01-30,900-13-0004,Screening In Progress,today-3,today-2
+cg-05,agency-a,tpl-in-hha,Linda,Brooks,linda.brooks@example.com,(574) 555-0105,1979-05-18,900-14-0001,Eligible,today-8,today-5
+cg-06,agency-a,tpl-in-hha,Robert,King,robert.king@example.com,(574) 555-0106,1982-09-09,900-15-0001,Cleared,today-204,today-198
+cg-07,agency-a,tpl-in-hha,Grace,Kim,grace.kim@example.com,(574) 555-0107,1996-02-25,900-16-0001,Cleared,today-64,today-58
+cg-08,agency-a,tpl-in-hha,Samuel,Okafor,samuel.okafor@example.com,(574) 555-0108,1975-12-04,900-17-0001,Not Current,today-364,today-4
+cg-09,agency-a,tpl-in-hha,Olivia,Martin,olivia.martin@example.com,(574) 555-0109,1991-06-11,900-18-0002,Review Required,today-6,today-5
+cg-10,agency-a,tpl-in-hha,Ethan,Walker,ethan.walker@example.com,(574) 555-0110,1999-08-27,900-19-0001,Intake In Progress,today-2,today-2
+cg-11,agency-b,tpl-in-hha,Hannah,Schultz,hannah.schultz@example.com,(574) 555-0111,1987-04-03,900-20-0001,Screening In Progress,today-3,today-1
+cg-12,agency-b,tpl-in-hha,David,Reyes,david.reyes@example.com,(574) 555-0112,1983-10-16,900-21-0001,Cleared,today-94,today-88
+cg-13,agency-b,tpl-in-hha,Chloe,Adams,chloe.adams@example.com,(574) 555-0113,1997-01-08,900-22-0001,Intake Complete,today-2,today-2

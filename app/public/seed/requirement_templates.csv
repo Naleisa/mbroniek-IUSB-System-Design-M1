@@ -1,0 +1,2 @@
+id,state,role,name,is_sample,sample_note
+tpl-in-hha,IN,Home Health Aide,Indiana Home Health Aide,true,Sample only. Confirm against current Indiana rules before real use (Spec Q1).

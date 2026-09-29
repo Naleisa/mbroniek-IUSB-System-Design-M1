@@ -1,0 +1,9 @@
+template_id,item_key,name,reason,source,method,requires_upload,sort_order
+tpl-in-hha,photo_id,Government photo ID,We use this to confirm who you are.,Applicant upload,Document review,true,1
+tpl-in-hha,hha_certification,Home Health Aide certification,Shows you finished the aide training Indiana requires.,Indiana aide registry (mock),Registry lookup,true,2
+tpl-in-hha,background_check,Criminal background check,Required before anyone can work in a client's home.,Background check vendor (mock),Background check,false,3
+tpl-in-hha,oig_exclusion,OIG exclusion check,Federal rules require confirming you are not barred from healthcare work.,OIG exclusion list (mock),Exclusion screening,false,4
+tpl-in-hha,sam_exclusion,SAM exclusion check,Federal rules require confirming you are not barred from government-funded work.,SAM exclusion list (mock),Exclusion screening,false,5
+tpl-in-hha,tb_test,TB test result,Helps protect clients from tuberculosis.,Applicant upload,Document review,true,6
+tpl-in-hha,cpr_first_aid,CPR and First Aid certification,So you are ready to help in an emergency.,Applicant upload,Document review,true,7
+tpl-in-hha,drivers_license,Driver's license,Needed to drive to clients' homes.,Applicant upload,Document review,true,8

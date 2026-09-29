@@ -1,0 +1,63 @@
+id,caregiver_id,occurred_at,actor_role,actor_name,event,details
+ev-0501,cg-05,today-8 09:20,applicant,Linda Brooks,Record created,Started intake from the Hoosier Home Care link
+ev-0502,cg-05,today-8 09:31,applicant,Linda Brooks,Consent recorded,Disclosure acknowledged and authorization granted (v1.0)
+ev-0503,cg-05,today-8 09:48,applicant,Linda Brooks,State changed,Intake In Progress to Intake Complete
+ev-0504,cg-05,today-7 10:02,coordinator,Dana Whitfield,Checks ordered,Background check; OIG; SAM; state registry
+ev-0505,cg-05,today-7 10:02,system,CareMatch,State changed,Intake Complete to Screening In Progress
+ev-0506,cg-05,today-5 08:15,system,CareMatch,Result received,Background check Clear (BG-14052); OIG Clear (OIG-14053); SAM Clear (SAM-14054)
+ev-0507,cg-05,today-5 08:16,system,CareMatch,Item verified,HHA certification Active in state registry (IN-HHA-14051)
+ev-0508,cg-05,today-5 11:40,coordinator,Dana Whitfield,Documents verified,Photo ID; TB test; CPR and First Aid; driver's license
+ev-0509,cg-05,today-5 11:40,system,CareMatch,State changed,Screening In Progress to Eligible
+ev-0601,cg-06,today-204 13:45,applicant,Robert King,Record created,Started intake from the Hoosier Home Care link
+ev-0602,cg-06,today-204 14:04,applicant,Robert King,Consent recorded,Disclosure acknowledged and authorization granted (v1.0)
+ev-0603,cg-06,today-204 14:30,applicant,Robert King,State changed,Intake In Progress to Intake Complete
+ev-0604,cg-06,today-203 09:10,coordinator,Dana Whitfield,Checks ordered,Background check; OIG; SAM; state registry
+ev-0605,cg-06,today-203 09:10,system,CareMatch,State changed,Intake Complete to Screening In Progress
+ev-0606,cg-06,today-200 08:05,system,CareMatch,Result received,Background check Clear (BG-15062); OIG Clear (OIG-15063); SAM Clear (SAM-15064)
+ev-0607,cg-06,today-200 08:06,system,CareMatch,Item verified,HHA certification Active in state registry (IN-HHA-15061)
+ev-0608,cg-06,today-200 10:20,coordinator,Dana Whitfield,Documents verified,Photo ID; TB test; CPR and First Aid; driver's license
+ev-0609,cg-06,today-200 10:20,system,CareMatch,State changed,Screening In Progress to Eligible
+ev-0610,cg-06,today-198 15:00,coordinator,Dana Whitfield,State changed,Eligible to Cleared
+ev-0611,cg-06,today-10 06:00,system,CareMatch,Item expiring,CPR and First Aid expires in 30 days
+ev-0612,cg-06,today-2 09:15,coordinator,Dana Whitfield,Replacement requested,CPR and First Aid due by expiration date
+ev-0701,cg-07,today-64 08:40,applicant,Grace Kim,Record created,Started intake from the Hoosier Home Care link
+ev-0702,cg-07,today-64 08:52,applicant,Grace Kim,Consent recorded,Disclosure acknowledged and authorization granted (v1.0)
+ev-0703,cg-07,today-64 09:15,applicant,Grace Kim,State changed,Intake In Progress to Intake Complete
+ev-0704,cg-07,today-63 10:30,coordinator,Dana Whitfield,Checks ordered,Background check; OIG; SAM; state registry
+ev-0705,cg-07,today-63 10:30,system,CareMatch,State changed,Intake Complete to Screening In Progress
+ev-0706,cg-07,today-60 08:00,system,CareMatch,Result received,Background check Clear (BG-16072); OIG Clear (OIG-16073); SAM Clear (SAM-16074)
+ev-0707,cg-07,today-60 08:01,system,CareMatch,Item verified,HHA certification Active in state registry (IN-HHA-16071)
+ev-0708,cg-07,today-60 13:10,coordinator,Dana Whitfield,Documents verified,Photo ID; TB test; CPR and First Aid; driver's license
+ev-0709,cg-07,today-60 13:10,system,CareMatch,State changed,Screening In Progress to Eligible
+ev-0710,cg-07,today-58 09:05,coordinator,Dana Whitfield,State changed,Eligible to Cleared
+ev-0801,cg-08,today-364 11:05,applicant,Samuel Okafor,Record created,Started intake from the Hoosier Home Care link
+ev-0802,cg-08,today-364 11:21,applicant,Samuel Okafor,Consent recorded,Disclosure acknowledged and authorization granted (v1.0)
+ev-0803,cg-08,today-364 11:50,applicant,Samuel Okafor,State changed,Intake In Progress to Intake Complete
+ev-0804,cg-08,today-362 09:00,coordinator,Dana Whitfield,Checks ordered,Background check; OIG; SAM; state registry
+ev-0805,cg-08,today-362 09:00,system,CareMatch,State changed,Intake Complete to Screening In Progress
+ev-0806,cg-08,today-360 08:10,system,CareMatch,Item verified,HHA certification Active in state registry (IN-HHA-17081)
+ev-0807,cg-08,today-360 14:25,coordinator,Dana Whitfield,Documents verified,Photo ID; TB test; CPR and First Aid; driver's license
+ev-0808,cg-08,today-359 08:00,system,CareMatch,Result received,Background check Clear; OIG Clear; SAM Clear
+ev-0809,cg-08,today-359 08:00,system,CareMatch,State changed,Screening In Progress to Eligible
+ev-0810,cg-08,today-358 10:00,coordinator,Dana Whitfield,State changed,Eligible to Cleared
+ev-0811,cg-08,today-100 08:00,system,CareMatch,Result received,Re-screening: Background check Clear (BG-17082); OIG Clear (OIG-17083); SAM Clear (SAM-17084)
+ev-0812,cg-08,today-35 06:00,system,CareMatch,Item expiring,TB test result expires in 30 days
+ev-0813,cg-08,today-5 06:00,system,CareMatch,Item expired,TB test result expired without a verified replacement
+ev-0814,cg-08,today-4 06:00,system,CareMatch,State changed,Cleared to Not Current
+ev-0901,cg-09,today-6 16:00,applicant,Olivia Martin,Record created,Started intake from the Hoosier Home Care link
+ev-0902,cg-09,today-6 16:12,applicant,Olivia Martin,Consent recorded,Disclosure acknowledged and authorization granted (v1.0)
+ev-0903,cg-09,today-6 16:40,applicant,Olivia Martin,State changed,Intake In Progress to Intake Complete
+ev-0904,cg-09,today-5 09:30,coordinator,Dana Whitfield,Checks ordered,Background check; OIG; SAM; state registry
+ev-0905,cg-09,today-5 09:30,system,CareMatch,State changed,Intake Complete to Screening In Progress
+ev-0906,cg-09,today-5 09:45,system,CareMatch,Result received,OIG Possible match (OIG-18093)
+ev-0907,cg-09,today-5 09:45,system,CareMatch,State changed,Screening In Progress to Review Required
+ev-1201,cg-12,today-94 12:40,applicant,David Reyes,Record created,Started intake from the Riverbend Caregivers link
+ev-1202,cg-12,today-94 13:02,applicant,David Reyes,Consent recorded,Disclosure acknowledged and authorization granted (v1.0)
+ev-1203,cg-12,today-94 13:30,applicant,David Reyes,State changed,Intake In Progress to Intake Complete
+ev-1204,cg-12,today-92 09:15,coordinator,Marcus Lee,Checks ordered,Background check; OIG; SAM; state registry
+ev-1205,cg-12,today-92 09:15,system,CareMatch,State changed,Intake Complete to Screening In Progress
+ev-1206,cg-12,today-90 08:20,system,CareMatch,Result received,Background check Clear (BG-21122); OIG Clear (OIG-21123); SAM Clear (SAM-21124)
+ev-1207,cg-12,today-90 08:21,system,CareMatch,Item verified,HHA certification Active in state registry (IN-HHA-21121)
+ev-1208,cg-12,today-90 12:00,coordinator,Marcus Lee,Documents verified,Photo ID; TB test; CPR and First Aid; driver's license
+ev-1209,cg-12,today-90 12:00,system,CareMatch,State changed,Screening In Progress to Eligible
+ev-1210,cg-12,today-88 10:30,coordinator,Marcus Lee,State changed,Eligible to Cleared

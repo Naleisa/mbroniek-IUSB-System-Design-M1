@@ -1,5 +1,5 @@
 
-# [Product/Service Name] — Specification
+# CareMatch — Specification
 
 ---
 
@@ -206,8 +206,13 @@ Patterns:
 -  **Accessibility:**
 	- Mobile first, one handed
 	- Screen reader support
-	- Plain language
+	- Plain, warm language per the design system's voice & tone, including error and refusal messages (R23)
 	- Tolerance for older devices
+	- Meets WCAG 2.1 AA, including a 4.5:1 minimum contrast ratio for body text
+	- Status is never shown by color alone
+
+-  **Branding:**
+	- Every screen follows `docs/design/design-system.md`: palette, Roboto typography, logo usage, core components, and voice & tone
 
 -  **Compliance/Legal:**
 	- Disclosure, authorization from caregivers
@@ -223,12 +228,12 @@ Patterns:
 ## 7. Decisions & Open Questions
 
 **Decided for first demo build**
-- D1 Build scope: A working demo with a real database, sign-in and workflow.  The background check, OIG/SAM exclusion and state registry checks are mocked behind swappable vendor adapters.  No real SSNs or real applicant data are used.
+- D1 Build scope: A front-end-only working demo with sign-in and workflow.  All data is kept in the browser by a mock data layer seeded from CSV files, and the demo connects to no external systems.  The background check, OIG/SAM exclusion and state registry checks are mocked behind swappable vendor adapters.  No real SSNs or real applicant data are used.
 - D2 Location: Indiana only.
 - D3 Job role: Home Health Aide (HHA) only. One requirement template.
 - D4 Users in the demo: Applicant/caregivers and coordinator.  Coordinator in demo can run compliance report and requirements templats are loaded as seeded data, with no editing screen.
-- D5 Applicant sign-in: magic link by email, which is also the resume link.  Coordinator sign-in: email + password.
-- D6 Notifications: real email, SMS is mocked (logged to an in-app outbox, not sent).
+- D5 Applicant sign-in: magic link, which is also the resume link.  In the demo the link is delivered to the in-app outbox instead of email.  Coordinator sign-in: email + password, checked against seeded demo accounts.
+- D6 Notifications: email and SMS are both mocked (logged to an in-app outbox, not sent).
 - D7 Two demo agencies are seeded so access separation between agencies (R4) can be shown and tested.
 
 **Open Questions (Not blocking demo)**

@@ -1,0 +1,25 @@
+caregiver_id,type,decision,wording_version,recorded_at
+cg-02,disclosure,acknowledged,v1.0,today-3 10:05
+cg-02,authorization,granted,v1.0,today-3 10:07
+cg-03,disclosure,acknowledged,v1.0,today-9 18:40
+cg-03,authorization,granted,v1.0,today-9 18:42
+cg-04,disclosure,acknowledged,v1.0,today-3 12:15
+cg-04,authorization,granted,v1.0,today-3 12:16
+cg-05,disclosure,acknowledged,v1.0,today-8 09:30
+cg-05,authorization,granted,v1.0,today-8 09:31
+cg-06,disclosure,acknowledged,v1.0,today-204 14:02
+cg-06,authorization,granted,v1.0,today-204 14:04
+cg-07,disclosure,acknowledged,v1.0,today-64 08:50
+cg-07,authorization,granted,v1.0,today-64 08:52
+cg-08,disclosure,acknowledged,v1.0,today-364 11:20
+cg-08,authorization,granted,v1.0,today-364 11:21
+cg-09,disclosure,acknowledged,v1.0,today-6 16:10
+cg-09,authorization,granted,v1.0,today-6 16:12
+cg-10,disclosure,acknowledged,v1.0,today-2 19:25
+cg-10,authorization,declined,v1.0,today-2 19:27
+cg-11,disclosure,acknowledged,v1.0,today-3 07:45
+cg-11,authorization,granted,v1.0,today-3 07:46
+cg-12,disclosure,acknowledged,v1.0,today-94 13:00
+cg-12,authorization,granted,v1.0,today-94 13:02
+cg-13,disclosure,acknowledged,v1.0,today-2 20:10
+cg-13,authorization,granted,v1.0,today-2 20:11

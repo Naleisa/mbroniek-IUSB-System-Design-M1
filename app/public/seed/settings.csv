@@ -1,0 +1,5 @@
+key,value,description
+warning_window_days,30,Days before expiration that an item shows as Expiring (R15)
+delayed_threshold_business_days,3,Business days before an outstanding check is marked Delayed (R20)
+resume_window_days,7,Days an applicant can resume an abandoned intake (R8)
+mock_vendor_delay_seconds,10,Seconds a mock vendor waits before returning a result (ADR-12)

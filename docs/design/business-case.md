@@ -1,4 +1,4 @@
-# Business Case — Home Healthcare Caregiver Hiring Portal
+# Business Case — CareMatch
 
 ## 1. Problem / Opportunity
 Homecare agencies currently send workers, typically unsupervised, into homes of elderly and disabled clients, having used verification through email, spreadsheets, and paper files.  Credential gaps and disqualifying records only surface later or not at all.  Caregivers are easily lost to other agencies as manual checks are ran, incentivizing cutting corners in deserved safety of the clients.

@@ -1,0 +1,16 @@
+id,agency_id,role,display_name,email,password,caregiver_id
+u-coord-a,agency-a,coordinator,Dana Whitfield,dana.whitfield@hoosierhomecare.example,demo1234,
+u-coord-b,agency-b,coordinator,Marcus Lee,marcus.lee@riverbendcaregivers.example,demo1234,
+u-cg-01,agency-a,applicant,Maria Gonzalez,maria.gonzalez@example.com,,cg-01
+u-cg-02,agency-a,applicant,James Carter,james.carter@example.com,,cg-02
+u-cg-03,agency-a,applicant,Aisha Patel,aisha.patel@example.com,,cg-03
+u-cg-04,agency-a,applicant,Tom Nguyen,tom.nguyen@example.com,,cg-04
+u-cg-05,agency-a,applicant,Linda Brooks,linda.brooks@example.com,,cg-05
+u-cg-06,agency-a,applicant,Robert King,robert.king@example.com,,cg-06
+u-cg-07,agency-a,applicant,Grace Kim,grace.kim@example.com,,cg-07
+u-cg-08,agency-a,applicant,Samuel Okafor,samuel.okafor@example.com,,cg-08
+u-cg-09,agency-a,applicant,Olivia Martin,olivia.martin@example.com,,cg-09
+u-cg-10,agency-a,applicant,Ethan Walker,ethan.walker@example.com,,cg-10
+u-cg-11,agency-b,applicant,Hannah Schultz,hannah.schultz@example.com,,cg-11
+u-cg-12,agency-b,applicant,David Reyes,david.reyes@example.com,,cg-12
+u-cg-13,agency-b,applicant,Chloe Adams,chloe.adams@example.com,,cg-13
