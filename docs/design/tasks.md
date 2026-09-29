@@ -42,7 +42,7 @@ Phases follow plan.md Section 6. All new work lives in `/app` (ADR-02); no task 
 | T16 | Add the data-layer agency filter so coordinators read only their own agency's data. | A test signed in as Agency A's coordinator reads Agency A records and gets zero rows from each store for Agency B. | R4, C7, ADR-21 | T9, T14 | Done |
 | T17 | Extend the filter so applicants read only their own record, items, documents, and consents. | A test signed in as an applicant reads their own record and gets zero rows for another applicant's. | R4, R6, ADR-21 | T15, T16 | Done |
 | T18 | Store documents in IndexedDB tagged with agency and applicant, behind the same access filter. | A test confirms a coordinator can read their own agency's files and an applicant can upload and read only their own. | R4, R11, ADR-15, ADR-21 | T17 | Done |
-| T19 | Write the access-separation test suite covering records and files. | The suite passes, proving Agency A's coordinator cannot read Agency B's records or files, one applicant cannot read another's, and no screen-facing read returns a full SSN from the vault. | R4, R5, C7, ADR-07 | T13, T18 | Not started |
+| T19 | Write the access-separation test suite covering records and files. | The suite passes, proving Agency A's coordinator cannot read Agency B's records or files, one applicant cannot read another's, and no screen-facing read returns a full SSN from the vault. | R4, R5, C7, ADR-07 | T13, T18 | Done |
 
 ### Phase 3 — Mock Vendors, Jobs, and Outbox
 
