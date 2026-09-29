@@ -9,6 +9,8 @@ export const SEED_TABLES = [
   'template_items',
   'caregivers',
   'required_items',
+  'documents',
+  'check_orders',
   'consents',
   'replacement_requests',
   'audit_events',

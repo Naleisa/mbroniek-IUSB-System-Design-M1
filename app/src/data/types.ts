@@ -89,3 +89,94 @@ export interface TemplateItem {
   requires_upload: string;
   sort_order: string;
 }
+
+/** Required item statuses (ADR-09). */
+export const ITEM_STATUSES = [
+  'Pending',
+  'Ordered',
+  'Delayed',
+  'Retryable',
+  'Verified',
+  'Expiring',
+  'Expired',
+  'Manual Verification',
+] as const;
+
+export type ItemStatus = (typeof ITEM_STATUSES)[number];
+
+export function isItemStatus(value: string): value is ItemStatus {
+  return (ITEM_STATUSES as readonly string[]).includes(value);
+}
+
+/** Every item records its source, method, verification date, and expiration date (R2). */
+export interface RequiredItem {
+  id: string;
+  caregiver_id: string;
+  item_key: string;
+  status: ItemStatus;
+  source: string;
+  method: string;
+  ordered_at: string;
+  verified_date: string;
+  expiration_date: string;
+  result: string;
+  evidence: string;
+  notes: string;
+}
+
+/** Describes a document file kept in IndexedDB (ADR-15). */
+export interface DocumentRecord {
+  id: string;
+  caregiver_id: string;
+  agency_id: string;
+  item_key: string;
+  file_name: string;
+  file_type: string;
+  expiration_date: string;
+  uploaded_at: string;
+}
+
+/** One request to a mock vendor adapter (ADR-01, ADR-12). */
+export interface CheckOrder {
+  id: string;
+  required_item_id: string;
+  caregiver_id: string;
+  source: string;
+  ordered_at: string;
+  completed_at: string;
+  result: string;
+}
+
+/** Disclosure and authorization are recorded separately, each with its wording version (ADR-16). */
+export const CONSENT_TYPES = ['disclosure', 'authorization'] as const;
+
+export type ConsentType = (typeof CONSENT_TYPES)[number];
+
+export const CONSENT_DECISIONS = ['acknowledged', 'granted', 'declined'] as const;
+
+export type ConsentDecision = (typeof CONSENT_DECISIONS)[number];
+
+export interface Consent {
+  id: string;
+  caregiver_id: string;
+  type: ConsentType;
+  decision: ConsentDecision;
+  wording_version: string;
+  recorded_at: string;
+}
+
+/** Notifications are written to the in-app outbox, marked email or SMS (ADR-06). */
+export const NOTIFICATION_CHANNELS = ['email', 'sms'] as const;
+
+export type NotificationChannel = (typeof NOTIFICATION_CHANNELS)[number];
+
+export interface Notification {
+  id: string;
+  agency_id: string;
+  recipient_user_id: string;
+  caregiver_id: string;
+  channel: NotificationChannel;
+  subject: string;
+  body: string;
+  created_at: string;
+}

@@ -33,7 +33,9 @@ The loader moves each SSN into the vault store and keeps only a token and the la
 | `requirement_templates.csv` | The Indiana Home Health Aide template, marked as a sample |
 | `template_items.csv` | The template's required items, with the plain-language reason shown to applicants |
 | `caregivers.csv` | 13 caregivers, with at least one in each lifecycle state |
-| `required_items.csv` | Each caregiver's items with status, source, method, dates, and evidence |
+| `required_items.csv` | Each caregiver's items with status, source, method, dates, and evidence; ids look like `ri-cg-01-photo_id` |
+| `documents.csv` | One row per seeded upload (file name, type, expiration). Seeded documents have no image file |
+| `check_orders.csv` | One row per vendor or registry check that was ordered, with its result; open orders have no `completed_at` |
 | `consents.csv` | Disclosure and authorization decisions, including one declined authorization |
 | `replacement_requests.csv` | Open replacement requests for expiring items |
 | `audit_events.csv` | History for caregivers past screening, used by the compliance report |

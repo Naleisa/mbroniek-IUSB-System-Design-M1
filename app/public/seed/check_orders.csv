@@ -1,0 +1,37 @@
+id,required_item_id,caregiver_id,source,ordered_at,completed_at,result
+co-cg-03-hha_certification,ri-cg-03-hha_certification,cg-03,Indiana aide registry (mock),today-8,today-8,Active
+co-cg-03-background_check,ri-cg-03-background_check,cg-03,Background check vendor (mock),today-8,,
+co-cg-03-oig_exclusion,ri-cg-03-oig_exclusion,cg-03,OIG exclusion list (mock),today-8,today-7,Clear
+co-cg-03-sam_exclusion,ri-cg-03-sam_exclusion,cg-03,SAM exclusion list (mock),today-8,today-7,Clear
+co-cg-04-hha_certification,ri-cg-04-hha_certification,cg-04,Indiana aide registry (mock),today-2,today-2,Registry unavailable
+co-cg-04-background_check,ri-cg-04-background_check,cg-04,Background check vendor (mock),today-2,today-2,Vendor failure
+co-cg-04-oig_exclusion,ri-cg-04-oig_exclusion,cg-04,OIG exclusion list (mock),today-2,today-1,Clear
+co-cg-04-sam_exclusion,ri-cg-04-sam_exclusion,cg-04,SAM exclusion list (mock),today-2,today-1,Clear
+co-cg-05-hha_certification,ri-cg-05-hha_certification,cg-05,Indiana aide registry (mock),today-7,today-5,Active
+co-cg-05-background_check,ri-cg-05-background_check,cg-05,Background check vendor (mock),today-7,today-5,Clear
+co-cg-05-oig_exclusion,ri-cg-05-oig_exclusion,cg-05,OIG exclusion list (mock),today-7,today-5,Clear
+co-cg-05-sam_exclusion,ri-cg-05-sam_exclusion,cg-05,SAM exclusion list (mock),today-7,today-5,Clear
+co-cg-06-hha_certification,ri-cg-06-hha_certification,cg-06,Indiana aide registry (mock),today-203,today-200,Active
+co-cg-06-background_check,ri-cg-06-background_check,cg-06,Background check vendor (mock),today-203,today-200,Clear
+co-cg-06-oig_exclusion,ri-cg-06-oig_exclusion,cg-06,OIG exclusion list (mock),today-203,today-200,Clear
+co-cg-06-sam_exclusion,ri-cg-06-sam_exclusion,cg-06,SAM exclusion list (mock),today-203,today-200,Clear
+co-cg-07-hha_certification,ri-cg-07-hha_certification,cg-07,Indiana aide registry (mock),today-63,today-60,Active
+co-cg-07-background_check,ri-cg-07-background_check,cg-07,Background check vendor (mock),today-63,today-60,Clear
+co-cg-07-oig_exclusion,ri-cg-07-oig_exclusion,cg-07,OIG exclusion list (mock),today-63,today-60,Clear
+co-cg-07-sam_exclusion,ri-cg-07-sam_exclusion,cg-07,SAM exclusion list (mock),today-63,today-60,Clear
+co-cg-08-hha_certification,ri-cg-08-hha_certification,cg-08,Indiana aide registry (mock),today-362,today-360,Active
+co-cg-08-background_check,ri-cg-08-background_check,cg-08,Background check vendor (mock),today-102,today-100,Clear
+co-cg-08-oig_exclusion,ri-cg-08-oig_exclusion,cg-08,OIG exclusion list (mock),today-102,today-100,Clear
+co-cg-08-sam_exclusion,ri-cg-08-sam_exclusion,cg-08,SAM exclusion list (mock),today-102,today-100,Clear
+co-cg-09-hha_certification,ri-cg-09-hha_certification,cg-09,Indiana aide registry (mock),today-5,today-5,Active
+co-cg-09-background_check,ri-cg-09-background_check,cg-09,Background check vendor (mock),today-5,today-4,Clear
+co-cg-09-oig_exclusion,ri-cg-09-oig_exclusion,cg-09,OIG exclusion list (mock),today-5,today-5,Possible match
+co-cg-09-sam_exclusion,ri-cg-09-sam_exclusion,cg-09,SAM exclusion list (mock),today-5,today-4,Clear
+co-cg-11-hha_certification,ri-cg-11-hha_certification,cg-11,Indiana aide registry (mock),today-1,today-1,Active
+co-cg-11-background_check,ri-cg-11-background_check,cg-11,Background check vendor (mock),today-1,,
+co-cg-11-oig_exclusion,ri-cg-11-oig_exclusion,cg-11,OIG exclusion list (mock),today-1,,
+co-cg-11-sam_exclusion,ri-cg-11-sam_exclusion,cg-11,SAM exclusion list (mock),today-1,,
+co-cg-12-hha_certification,ri-cg-12-hha_certification,cg-12,Indiana aide registry (mock),today-92,today-90,Active
+co-cg-12-background_check,ri-cg-12-background_check,cg-12,Background check vendor (mock),today-92,today-90,Clear
+co-cg-12-oig_exclusion,ri-cg-12-oig_exclusion,cg-12,OIG exclusion list (mock),today-92,today-90,Clear
+co-cg-12-sam_exclusion,ri-cg-12-sam_exclusion,cg-12,SAM exclusion list (mock),today-92,today-90,Clear

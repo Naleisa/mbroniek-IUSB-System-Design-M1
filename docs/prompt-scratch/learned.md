@@ -8,3 +8,6 @@ Task 1 was completed with no issues.  Was able to run it on dev without problems
 
 Before starting on Tasks 2 I went through and removed all playwright and Vitest requirements, and left it with manual checks only.
 
+Task 5 had some serious confusion from claude that I had to answer multiple open questions.
+
+Task 6 found gaps in our seed documents.  Had it update with fake data to correct.
