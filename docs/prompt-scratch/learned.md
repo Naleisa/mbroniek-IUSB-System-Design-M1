@@ -18,4 +18,4 @@ Task 12 realized around this time that design docs are no longer reachable becau
 
 Task 14 gave great recommendations to show the demo username/password on the login screen for demo purposes
 
-Task 15 left some really ugly text for the URL.  Had Claude clean that up.
+Task 15 left some really ugly text for the URL.  Had Claude clean that up. (Side note: The latest model of Opus (5.5) is insanely efficient it seems)

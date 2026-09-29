@@ -127,7 +127,77 @@ function describeChanges(before: Row, after: Row): string {
     .join('; ');
 }
 
+/** Tables every agency shares: settings and the one Indiana template (ADR-03). */
+const SHARED_TABLES = ['settings', 'requirement_templates', 'template_items'];
+
+const SHARED = 'shared';
+
+/**
+ * Which agency a row belongs to (R4, C7): its own id for agencies, its
+ * `agency_id`, or its caregiver's agency. Sign-in audit events belong to the
+ * user's agency. Rows with no agency (internal tables such as sign-in links)
+ * belong to none and are hidden from coordinators.
+ */
+function agencyOf(table: string, row: Row, backend: StorageBackend): string | undefined {
+  if (SHARED_TABLES.includes(table)) {
+    return SHARED;
+  }
+  if (table === 'agencies') {
+    return row.id;
+  }
+  if (row.agency_id) {
+    return row.agency_id;
+  }
+  if (row.caregiver_id) {
+    return backend.readTable('caregivers').find((caregiver) => caregiver.id === row.caregiver_id)?.agency_id;
+  }
+  if (table === AUDIT_TABLE && row.table === 'users') {
+    return backend.readTable('users').find((user) => user.id === row.record_id)?.agency_id;
+  }
+  if (table === AUDIT_TABLE && row.table === 'agencies') {
+    return row.record_id;
+  }
+  return undefined;
+}
+
+/** The data layer screens use: a signed-in coordinator reads and writes only their own agency's data (R4). */
 export function createDataLayer(backend: StorageBackend): DataLayer {
+  return buildDataLayer(backend, true);
+}
+
+/**
+ * Unfiltered data layer for scheduled jobs (T24, T25), which must see every
+ * agency. Never give it to screens.
+ */
+export function createSystemDataLayer(backend: StorageBackend): DataLayer {
+  return buildDataLayer(backend, false);
+}
+
+function buildDataLayer(backend: StorageBackend, agencyFiltered: boolean): DataLayer {
+  /** The signed-in coordinator's agency, or undefined when no coordinator filter applies. */
+  function coordinatorAgency(): string | undefined {
+    if (!agencyFiltered) {
+      return undefined;
+    }
+    const userId = backend.readTable(SESSION_TABLE)[0]?.user_id;
+    const user = backend.readTable('users').find((row) => row.id === userId);
+    return user?.role === 'coordinator' ? user.agency_id : undefined;
+  }
+
+  function isVisible(table: string, row: Row, agency: string | undefined): boolean {
+    if (!agency) {
+      return true;
+    }
+    const owner = agencyOf(table, row, backend);
+    return owner === agency || owner === SHARED;
+  }
+
+  function refuseOtherAgencyWrite(table: string, row: Row): void {
+    if (!isVisible(table, row, coordinatorAgency())) {
+      throw new Error('You can only change records for your own agency.');
+    }
+  }
+
   function appendAuditEvent(
     actor: Actor,
     event: string,
@@ -159,6 +229,8 @@ export function createDataLayer(backend: StorageBackend): DataLayer {
     }
     const before = rows[index];
     const updated = { ...before, ...changes, id };
+    refuseOtherAgencyWrite(table, before);
+    refuseOtherAgencyWrite(table, updated);
     rows[index] = updated;
     backend.writeTable(table, rows);
     appendAuditEvent(actor, 'Updated', describeChanges(before, updated), table, updated);
@@ -168,12 +240,14 @@ export function createDataLayer(backend: StorageBackend): DataLayer {
   return {
     list: (table) => {
       refuseVaultRead(table);
-      return backend.readTable(table);
+      const agency = coordinatorAgency();
+      return backend.readTable(table).filter((row) => isVisible(table, row, agency));
     },
 
     get: (table, id) => {
       refuseVaultRead(table);
-      return backend.readTable(table).find((row) => row.id === id);
+      const row = backend.readTable(table).find((candidate) => candidate.id === id);
+      return row && isVisible(table, row, coordinatorAgency()) ? row : undefined;
     },
 
     insert: (table, row, actor) => {
@@ -181,6 +255,7 @@ export function createDataLayer(backend: StorageBackend): DataLayer {
       refuseSsnWrite(table, row);
       const rows = backend.readTable(table);
       const inserted = { ...row, id: row.id || crypto.randomUUID() };
+      refuseOtherAgencyWrite(table, inserted);
       if (rows.some((existing) => existing.id === inserted.id)) {
         throw new Error(`A ${table} row with id ${inserted.id} already exists.`);
       }
@@ -192,9 +267,11 @@ export function createDataLayer(backend: StorageBackend): DataLayer {
     update,
 
     storeSsn: (caregiverId, ssn, actor) => {
-      if (!backend.readTable('caregivers').some((row) => row.id === caregiverId)) {
+      const caregiver = backend.readTable('caregivers').find((row) => row.id === caregiverId);
+      if (!caregiver) {
         throw new Error(`No caregivers row with id ${caregiverId}.`);
       }
+      refuseOtherAgencyWrite('caregivers', caregiver);
       const entry = newVaultEntry(caregiverId, ssn);
       const otherEntries = backend.readTable(VAULT_TABLE).filter((row) => row.caregiver_id !== caregiverId);
       backend.writeTable(VAULT_TABLE, [...otherEntries, entry]);
