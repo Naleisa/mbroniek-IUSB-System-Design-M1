@@ -5,6 +5,14 @@ function pad(value: number): string {
   return String(value).padStart(2, '0');
 }
 
+/** Formats a moment as a local `YYYY-MM-DDTHH:MM`, the same format resolved seed times use. */
+export function formatLocalDateTime(date: Date): string {
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  );
+}
+
 /** Resolves a relative seed date to a local `YYYY-MM-DD` or `YYYY-MM-DDTHH:MM`. Other values are returned unchanged. */
 export function resolveRelativeDate(value: string, today: Date): string {
   const match = RELATIVE_DATE.exec(value.trim());

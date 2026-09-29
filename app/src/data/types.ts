@@ -165,6 +165,26 @@ export interface Consent {
   recorded_at: string;
 }
 
+/** Who made a change. Scheduled jobs act as `system` / `CareMatch`. */
+export interface Actor {
+  role: UserRole | 'system';
+  name: string;
+}
+
+/** One entry in the append-only audit log (R1, C5, ADR-10). */
+export interface AuditEvent {
+  id: string;
+  caregiver_id: string;
+  occurred_at: string;
+  actor_role: string;
+  actor_name: string;
+  event: string;
+  details: string;
+  /** Table and row the event is about; blank on seeded history. */
+  table: string;
+  record_id: string;
+}
+
 /** Notifications are written to the in-app outbox, marked email or SMS (ADR-06). */
 export const NOTIFICATION_CHANNELS = ['email', 'sms'] as const;
 

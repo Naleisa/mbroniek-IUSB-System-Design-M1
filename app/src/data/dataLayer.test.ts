@@ -43,7 +43,7 @@ describe('data layer seed loading', () => {
     const backend = createMemoryBackend();
     const firstStart = createDataLayer(backend);
     await firstStart.loadSeed(async () => testSeed, today);
-    firstStart.update('agencies', 'agency-a', { name: 'Changed Name' });
+    firstStart.update('agencies', 'agency-a', { name: 'Changed Name' }, { role: 'system', name: 'Test' });
 
     const secondStart = createDataLayer(backend);
     expect(await secondStart.loadSeed(async () => testSeed, today)).toBe(false);
