@@ -1,0 +1,79 @@
+/*
+ * CareMatch theme (ADR-20). Overrides Bootstrap's CSS variables to apply
+ * docs/design/design-system.md. Load after bootstrap.min.css.
+ *
+ * Bootstrap "primary" is Secondary #a93f55: white text on Primary #f2545b
+ * fails WCAG AA contrast, so #f2545b is kept for the logo only.
+ */
+
+/* Section 2 — palette; Section 3 — Roboto body text */
+:root {
+  --bs-body-font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --bs-body-font-size: 1rem;
+  --bs-body-font-weight: 400;
+  --bs-body-bg: #f3f7f0;
+  --bs-body-color: #19323c;
+
+  --bs-primary: #a93f55;
+  --bs-primary-rgb: 169, 63, 85;
+  --bs-link-color: #a93f55;
+  --bs-link-color-rgb: 169, 63, 85;
+  --bs-link-hover-color: #843142;
+  --bs-link-hover-color-rgb: 132, 49, 66;
+  --bs-focus-ring-color: rgba(169, 63, 85, 0.25);
+  --bs-border-color: #dee2e6;
+}
+
+/* Section 3 — headings */
+h1,
+.h1 {
+  font-size: 2rem;
+  font-weight: 700;
+}
+
+h2,
+.h2 {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+/* Section 6 — primary button: #a93f55, white Roboto Medium text, 10% darker on hover and press */
+.btn-primary {
+  --bs-btn-font-weight: 500;
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #a93f55;
+  --bs-btn-border-color: #a93f55;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #843142;
+  --bs-btn-hover-border-color: #843142;
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: #843142;
+  --bs-btn-active-border-color: #843142;
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: #a93f55;
+  --bs-btn-disabled-border-color: #a93f55;
+  --bs-btn-focus-shadow-rgb: 169, 63, 85;
+}
+
+/* Section 6 — secondary button: transparent, 1px #a93f55 border and text, light tint on hover */
+.btn-outline-primary {
+  --bs-btn-color: #a93f55;
+  --bs-btn-bg: transparent;
+  --bs-btn-border-color: #a93f55;
+  --bs-btn-hover-color: #a93f55;
+  --bs-btn-hover-bg: #f2e2e6;
+  --bs-btn-hover-border-color: #a93f55;
+  --bs-btn-active-color: #a93f55;
+  --bs-btn-active-bg: #f2e2e6;
+  --bs-btn-active-border-color: #a93f55;
+  --bs-btn-disabled-color: #a93f55;
+  --bs-btn-disabled-border-color: #a93f55;
+  --bs-btn-focus-shadow-rgb: 169, 63, 85;
+}
+
+/* Section 6 — card: white on the #f3f7f0 page, 1px light gray border */
+.card {
+  --bs-card-bg: #fff;
+  --bs-card-border-width: 1px;
+  --bs-card-border-color: #dee2e6;
+}

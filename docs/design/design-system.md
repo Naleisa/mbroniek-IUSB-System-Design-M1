@@ -35,7 +35,7 @@ List reusable UI patterns and their rules (e.g. radius, border, etc.).
 | Button (primary) | Use #a93f55 with white text in Roboto medium.  Hover and pressed should be 10% darker.  One primary button per screen. |
 | Button (secondary) | Transparent fill. 1px #a93f55 border and #a93f55 text. Hover fills with #a93f55 lighter tint. Supporting actions such as cancel. |
 | Card | White background on #f3f7f0 page. 1px light gray border. |
-| Form field | Label abovie field. Required fields are marked with an asterisk. |
+| Form field | Label above field. Required fields are marked with an asterisk. |
 
 ## 7. Voice & Tone
 Clear, warm, and professional voice, using short, plain language with no humor or jargon.
