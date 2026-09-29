@@ -34,6 +34,12 @@ jobs:
       - run: npm test
       - run: npm run build
 
+      # Converts docs/ Markdown to web pages under /docs/ next to the app (T61).
+      - uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./docs
+          destination: ./app/dist/docs
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3

@@ -1,0 +1,9 @@
+# Publishes the project docs as web pages under /docs/ on GitHub Pages (T61).
+# Built by actions/jekyll-build-pages in .github/workflows/deploy.yml.
+title: CareMatch Docs
+theme: jekyll-theme-primer
+baseurl: /mbroniek-IUSB-System-Design-M1/docs
+
+# Scratch notes and prompts stay in the repo only.
+exclude:
+  - prompt-scratch
