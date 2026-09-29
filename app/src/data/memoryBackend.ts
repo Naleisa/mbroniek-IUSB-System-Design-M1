@@ -23,5 +23,10 @@ export function createMemoryBackend(): StorageBackend {
     },
     getDocument: async (id) => documents.get(id),
     listDocuments: async () => [...documents.values()],
+    clearAll: async () => {
+      tables.clear();
+      documents.clear();
+      seeded = false;
+    },
   };
 }

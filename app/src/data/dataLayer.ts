@@ -38,6 +38,8 @@ export interface DataLayer {
   getSignedInUser(): Row | undefined;
   /** Loads the seed on first start only. Returns true when the seed was loaded. */
   loadSeed(getSeedFiles: () => Promise<SeedFiles>, today?: Date): Promise<boolean>;
+  /** "Reset demo data" (T59): clears all stored data, documents, and the session, then reloads the seed. */
+  resetDemoData(getSeedFiles: () => Promise<SeedFiles>, today?: Date): Promise<void>;
 }
 
 export type SignInWithLinkResult = { ok: true; user: Row; next: string } | { ok: false; reason: string };
@@ -438,31 +440,40 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
       return backend.readTable('users').find((row) => row.id === userId);
     },
 
-    // Seeding writes directly: the seed carries its own audit history, so it adds no events.
-    loadSeed: async (getSeedFiles, today = new Date()) => {
-      if (backend.isSeeded()) {
-        return false;
-      }
+    loadSeed,
 
+    resetDemoData: async (getSeedFiles, today = new Date()) => {
+      // Fetch first, so a failed fetch leaves the current data in place.
       const files = await getSeedFiles();
-      const tables: (readonly [string, Row[]])[] = Object.entries(files).map(
-        ([table, csvText]) => [table, parseSeedTable(table, csvText, today)] as const,
-      );
-
-      // Seeded SSNs go to the vault; caregiver rows keep only the token and last four (ADR-11).
-      const caregiverIndex = tables.findIndex(([table]) => table === 'caregivers');
-      if (caregiverIndex !== -1) {
-        const { caregivers, vault } = moveSeedSsnsToVault(tables[caregiverIndex][1]);
-        tables[caregiverIndex] = ['caregivers', caregivers];
-        tables.push([VAULT_TABLE, vault]);
-      }
-
-      // Write only after every file parsed, so a bad file leaves storage untouched.
-      for (const [table, rows] of tables) {
-        backend.writeTable(table, rows);
-      }
-      backend.markSeeded();
-      return true;
+      await backend.clearAll();
+      await loadSeed(async () => files, today);
     },
   };
+
+  // Seeding writes directly: the seed carries its own audit history, so it adds no events.
+  async function loadSeed(getSeedFiles: () => Promise<SeedFiles>, today = new Date()): Promise<boolean> {
+    if (backend.isSeeded()) {
+      return false;
+    }
+
+    const files = await getSeedFiles();
+    const tables: (readonly [string, Row[]])[] = Object.entries(files).map(
+      ([table, csvText]) => [table, parseSeedTable(table, csvText, today)] as const,
+    );
+
+    // Seeded SSNs go to the vault; caregiver rows keep only the token and last four (ADR-11).
+    const caregiverIndex = tables.findIndex(([table]) => table === 'caregivers');
+    if (caregiverIndex !== -1) {
+      const { caregivers, vault } = moveSeedSsnsToVault(tables[caregiverIndex][1]);
+      tables[caregiverIndex] = ['caregivers', caregivers];
+      tables.push([VAULT_TABLE, vault]);
+    }
+
+    // Write only after every file parsed, so a bad file leaves storage untouched.
+    for (const [table, rows] of tables) {
+      backend.writeTable(table, rows);
+    }
+    backend.markSeeded();
+    return true;
+  }
 }

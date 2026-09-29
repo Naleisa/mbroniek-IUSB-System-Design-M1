@@ -52,5 +52,12 @@ export function createBrowserBackend(): StorageBackend {
     getDocument: (id) =>
       runDocumentRequest<StoredDocument | undefined>('readonly', (store) => store.get(id)),
     listDocuments: () => runDocumentRequest<StoredDocument[]>('readonly', (store) => store.getAll()),
+    clearAll: async () => {
+      const keys = Object.keys(localStorage).filter((key) => key.startsWith(KEY_PREFIX));
+      for (const key of keys) {
+        localStorage.removeItem(key);
+      }
+      await runDocumentRequest('readwrite', (store) => store.clear());
+    },
   };
 }

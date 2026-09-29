@@ -21,4 +21,6 @@ export interface StorageBackend {
   putDocument(document: StoredDocument): Promise<void>;
   getDocument(id: string): Promise<StoredDocument | undefined>;
   listDocuments(): Promise<StoredDocument[]>;
+  /** Removes every table, document, and the seeded marker ("Reset demo data", T59). */
+  clearAll(): Promise<void>;
 }
