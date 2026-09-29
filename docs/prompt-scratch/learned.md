@@ -21,3 +21,5 @@ Task 14 gave great recommendations to show the demo username/password on the log
 Task 15 left some really ugly text for the URL.  Had Claude clean that up.
 
 T59 found issues with the way we were planning on clearing data.  Cleared up some requirements for edits.
+
+T20 made me realize there's no context for the demo user on how to demo SSN test returns.  Requested the addition of a tap hint icon to recommend demo numbers.
