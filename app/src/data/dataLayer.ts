@@ -26,11 +26,18 @@ export interface DataLayer {
   putDocument(document: StoredDocument, actor: Actor): Promise<void>;
   getDocument(id: string): Promise<StoredDocument | undefined>;
   listDocuments(): Promise<StoredDocument[]>;
+  /** Demo coordinator sign-in against the seeded accounts (ADR-05). Returns the user, or undefined if nothing matches. */
+  signIn(email: string, password: string): Row | undefined;
+  signOut(): void;
+  getSignedInUser(): Row | undefined;
   /** Loads the seed on first start only. Returns true when the seed was loaded. */
   loadSeed(getSeedFiles: () => Promise<SeedFiles>, today?: Date): Promise<boolean>;
 }
 
 export const dataLayerKey: InjectionKey<DataLayer> = Symbol('dataLayer');
+
+/** Holds the one signed-in user id; kept like other data so a reload stays signed in. */
+const SESSION_TABLE = 'session';
 
 export const AUDIT_TABLE = 'audit_events';
 
@@ -187,6 +194,38 @@ export function createDataLayer(backend: StorageBackend): DataLayer {
     },
     getDocument: (id) => backend.getDocument(id),
     listDocuments: () => backend.listDocuments(),
+
+    signIn: (email, password) => {
+      const user = backend
+        .readTable('users')
+        .find(
+          (row) =>
+            row.role === 'coordinator' &&
+            row.password !== '' &&
+            row.email.toLowerCase() === email.trim().toLowerCase() &&
+            row.password === password,
+        );
+      if (!user) {
+        return undefined;
+      }
+      backend.writeTable(SESSION_TABLE, [{ id: 'current', user_id: user.id }]);
+      appendAuditEvent({ role: 'coordinator', name: user.display_name }, 'Signed in', '', 'users', user);
+      return user;
+    },
+
+    signOut: () => {
+      const userId = backend.readTable(SESSION_TABLE)[0]?.user_id;
+      const user = backend.readTable('users').find((row) => row.id === userId);
+      backend.writeTable(SESSION_TABLE, []);
+      if (user) {
+        appendAuditEvent({ role: 'coordinator', name: user.display_name }, 'Signed out', '', 'users', user);
+      }
+    },
+
+    getSignedInUser: () => {
+      const userId = backend.readTable(SESSION_TABLE)[0]?.user_id;
+      return backend.readTable('users').find((row) => row.id === userId);
+    },
 
     // Seeding writes directly: the seed carries its own audit history, so it adds no events.
     loadSeed: async (getSeedFiles, today = new Date()) => {

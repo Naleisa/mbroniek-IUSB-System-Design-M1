@@ -15,3 +15,5 @@ Task 6 found gaps in our seed documents.  Had it update with fake data to correc
 Task 10 found gaps in our process of where a caregiver's status can go after review required.  Agreed with Claude's recommendations on this one for the requirements.
 
 Task 12 realized around this time that design docs are no longer reachable because we're building the page using a workflow.  Had claude build a new task to include a page that had design docs on it.
+
+Task 14 gave great recommendations to show the demo username/password on the login screen for demo purposes

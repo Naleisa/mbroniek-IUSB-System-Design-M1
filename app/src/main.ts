@@ -4,12 +4,13 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import './styles/theme.css';
-import { createApp } from 'vue';
+import { createApp, ref } from 'vue';
 import App from './App.vue';
 import router from './router';
 import { createBrowserBackend } from './data/browserBackend';
 import { createDataLayer, dataLayerKey } from './data/dataLayer';
 import { fetchSeedFiles } from './data/seed';
+import { sessionKey } from './session';
 
 const app = createApp(App);
 
@@ -18,6 +19,15 @@ dataLayer.loadSeed(fetchSeedFiles).catch((error) => {
   console.error('There was a problem loading the demo seed data.', error);
 });
 app.provide(dataLayerKey, dataLayer);
+app.provide(sessionKey, ref(dataLayer.getSignedInUser()));
+
+// Coordinator pages send anyone not signed in as a coordinator to sign-in (ADR-05).
+router.beforeEach((to) => {
+  if (to.meta.requiresCoordinator && dataLayer.getSignedInUser()?.role !== 'coordinator') {
+    return '/sign-in';
+  }
+  return true;
+});
 
 app.use(router);
 app.mount('#app');
