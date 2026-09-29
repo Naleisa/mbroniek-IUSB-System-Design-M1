@@ -5,3 +5,6 @@ First step was having Claude go through the different parts of the design struct
 Next step was redesigning the plan, specification, and tasks to match the requirement that we build a demo first.
 
 Task 1 was completed with no issues.  Was able to run it on dev without problems.  Questions were asked and answered.
+
+Before starting on Tasks 2 I went through and removed all playwright and Vitest requirements, and left it with manual checks only.
+

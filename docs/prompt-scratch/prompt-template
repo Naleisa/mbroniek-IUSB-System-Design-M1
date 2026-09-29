@@ -1,4 +1,4 @@
-You are continuing to adapt the base web application template. You are implementing exactly ONE task from tasks.md: [T#]
+You are continuing to adapt the base web application template. You are implementing exactly ONE task from tasks.md: [T2]
 
 Before writing any code:
 1. Read tasks.md and find task [T2]. Note what it traces to (requirement and/or ADR IDs).
@@ -10,7 +10,7 @@ Before writing any code:
 Restate back to me, briefly, what you found in steps 1–5 before proceeding, so I can confirm it's correct.
 
 CONSTRAINTS
-- Build only what task [T#] describes. Do not build, fix, or refactor anything outside its scope — note other issues you notice, don't fix them.
+- Build only what task [T2] describes. Do not build, fix, or refactor anything outside its scope — note other issues you notice, don't fix them.
 - We are adapting a base web app template. Follow the tech stack as it is and the design system documented. Do not introduce new styles, libraries, or patterns not already established.
 - Do not add features, fields, or behavior beyond what the requirement states.
 - If anything is ambiguous or the documents don't fully answer it, stop and ask — do not guess.
