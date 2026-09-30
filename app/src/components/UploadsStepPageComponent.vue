@@ -177,8 +177,7 @@ async function saveDocument(itemKey: string) {
           </div>
         </div>
 
-        <!-- The consent steps (T35) come next; until then Continue goes to the applicant's home page. -->
-        <router-link to="/applicant" class="btn btn-primary w-100">Continue</router-link>
+        <router-link to="/applicant/intake/disclosure" class="btn btn-primary w-100">Continue</router-link>
         <router-link to="/applicant/intake/needed" class="btn btn-outline-primary w-100 mt-2">Back</router-link>
       </div>
     </div>

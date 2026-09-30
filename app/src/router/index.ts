@@ -11,6 +11,7 @@ import IntakeStartPageComponent from '../components/IntakeStartPageComponent.vue
 import IdentityStepPageComponent from '../components/IdentityStepPageComponent.vue';
 import NeededStepPageComponent from '../components/NeededStepPageComponent.vue';
 import UploadsStepPageComponent from '../components/UploadsStepPageComponent.vue';
+import ConsentStepPageComponent from '../components/ConsentStepPageComponent.vue';
 
 const routes = [
   {
@@ -61,6 +62,16 @@ const routes = [
     path: '/applicant/intake/uploads',
     component: UploadsStepPageComponent,
     meta: { requiresApplicant: true },
+  },
+  {
+    path: '/applicant/intake/disclosure',
+    component: ConsentStepPageComponent,
+    meta: { requiresApplicant: true, consentType: 'disclosure' },
+  },
+  {
+    path: '/applicant/intake/authorization',
+    component: ConsentStepPageComponent,
+    meta: { requiresApplicant: true, consentType: 'authorization' },
   },
   {
     path: '/apply/:agencySlug',

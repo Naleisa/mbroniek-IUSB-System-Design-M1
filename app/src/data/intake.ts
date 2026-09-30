@@ -1,6 +1,8 @@
+import { CONSENT_WORDING_VERSION } from './consentWording';
 import type { DataLayer } from './dataLayer';
 import { formatLocalDateTime } from './relativeDates';
-import type { Actor } from './types';
+import type { Row } from './storageBackend';
+import type { Actor, ConsentDecision, ConsentType } from './types';
 import { isTestSsn } from './vault';
 
 /*
@@ -312,4 +314,55 @@ export async function uploadDocument(dataLayer: DataLayer, input: UploadInput, a
     actor,
   );
   return { ok: true, documentId };
+}
+
+export type ConsentResult = { ok: true; consent: Row } | { ok: false; reason: string };
+
+/** The signed-in applicant's current consent of one type at the current wording version, if any. */
+export function currentConsent(dataLayer: DataLayer, type: ConsentType): Row | undefined {
+  const caregiverId = dataLayer.getSignedInUser()?.caregiver_id;
+  return dataLayer
+    .list('consents')
+    .filter(
+      (row) => row.caregiver_id === caregiverId && row.type === type && row.wording_version === CONSENT_WORDING_VERSION,
+    )
+    .sort((a, b) => b.recorded_at.localeCompare(a.recorded_at))[0];
+}
+
+/**
+ * Records the applicant's answer on the disclosure or authorization screen (R3, ADR-16):
+ * one consents row with the decision, the wording version shown, and the time. An
+ * answer already given at this version isn't recorded twice, and authorization needs the
+ * disclosure to be acknowledged first.
+ */
+export function recordConsent(
+  dataLayer: DataLayer,
+  type: ConsentType,
+  decision: ConsentDecision,
+  actor: Actor,
+): ConsentResult {
+  const caregiverId = dataLayer.getSignedInUser()?.caregiver_id;
+  const caregiver = caregiverId ? dataLayer.get('caregivers', caregiverId) : undefined;
+  if (!caregiver) {
+    throw new Error('Please sign in to continue your application.');
+  }
+  if (type === 'authorization' && currentConsent(dataLayer, 'disclosure')?.decision !== 'acknowledged') {
+    return { ok: false, reason: 'Please read the background check disclosure first.' };
+  }
+  const existing = currentConsent(dataLayer, type);
+  if (existing && existing.decision === decision) {
+    return { ok: true, consent: existing };
+  }
+  const consent = dataLayer.insert(
+    'consents',
+    {
+      caregiver_id: caregiver.id,
+      type,
+      decision,
+      wording_version: CONSENT_WORDING_VERSION,
+      recorded_at: formatLocalDateTime(dataLayer.today()),
+    },
+    actor,
+  );
+  return { ok: true, consent };
 }

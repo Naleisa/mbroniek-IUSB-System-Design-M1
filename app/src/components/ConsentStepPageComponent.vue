@@ -1,0 +1,87 @@
+<script setup lang="ts">
+import { computed, inject, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { consentWording, CONSENT_WORDING_VERSION } from '../data/consentWording';
+import { dataLayerKey } from '../data/dataLayer';
+import { currentConsent, recordConsent } from '../data/intake';
+import type { ConsentType } from '../data/types';
+
+// Intake steps: the background check disclosure and the authorization, each its own screen apart from
+// the application (R3, ADR-16). Each answer is saved with the time and the wording version shown.
+const dataLayer = inject(dataLayerKey)!;
+const route = useRoute();
+const router = useRouter();
+
+const type = computed(() => route.meta.consentType as ConsentType);
+const user = dataLayer.getSignedInUser();
+const agencyName = user ? (dataLayer.get('agencies', user.agency_id)?.name ?? 'Your agency') : 'Your agency';
+const wording = computed(() => consentWording(type.value, agencyName));
+
+// Bumped after saving so the "accepted on" line re-reads from the data layer.
+const saves = ref(0);
+const accepted = computed(() => {
+  void saves.value;
+  const consent = currentConsent(dataLayer, type.value);
+  return consent && consent.decision !== 'declined' ? consent : undefined;
+});
+const error = ref('');
+// Both screens share this component, so a message from one screen doesn't carry over to the other.
+watch(type, () => {
+  error.value = '';
+});
+
+const next = computed(() => (type.value === 'disclosure' ? '/applicant/intake/authorization' : '/applicant'));
+const back = computed(() => (type.value === 'disclosure' ? '/applicant/intake/uploads' : '/applicant/intake/disclosure'));
+
+function accept() {
+  const result = recordConsent(
+    dataLayer,
+    type.value,
+    type.value === 'disclosure' ? 'acknowledged' : 'granted',
+    { role: 'applicant', name: user?.display_name ?? 'Applicant' },
+  );
+  if (!result.ok) {
+    error.value = result.reason;
+    return;
+  }
+  saves.value += 1;
+  // T37 adds submitting the application after authorization; until then it ends on the applicant's home page.
+  router.push(next.value);
+}
+</script>
+
+<template>
+  <div class="container py-4">
+    <div class="row justify-content-center">
+      <div class="col-md-6 col-lg-5">
+        <h1>{{ wording.heading }}</h1>
+        <div class="card">
+          <div class="card-body">
+            <p v-for="paragraph in wording.paragraphs" :key="paragraph">{{ paragraph }}</p>
+            <p class="small text-body-secondary mb-3">
+              Sample wording for this demo ({{ CONSENT_WORDING_VERSION }}). It would need legal review before real use.
+            </p>
+
+            <div v-if="error" class="alert alert-warning" role="alert">
+              {{ error }}
+              <router-link to="/applicant/intake/disclosure" class="alert-link">Go to the disclosure</router-link>
+            </div>
+
+            <template v-if="accepted">
+              <p class="mb-3" role="status">
+                <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+                You {{ type === 'disclosure' ? 'read this' : 'gave your authorization' }} on
+                {{ accepted.recorded_at.slice(0, 10) }}.
+              </p>
+              <router-link :to="next" class="btn btn-primary w-100">Continue</router-link>
+            </template>
+            <button v-else type="button" class="btn btn-primary w-100" @click="accept">
+              {{ type === 'disclosure' ? "I've read this" : 'I authorize these checks' }}
+            </button>
+            <router-link :to="back" class="btn btn-outline-primary w-100 mt-2">Back</router-link>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
