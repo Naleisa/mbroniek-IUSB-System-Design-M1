@@ -49,3 +49,5 @@ T42 discovered issues with the seeded caregiver information where we weren't lis
 T44 i realized we're not building any home page at all for the demo.  Requested that we add a task for demo shortcuts, which breaks ADR18 and T30, but required for ease of use of the demo
 
 T46 updated demo walkthrough requirements to be short and simple instead of a full check everything demo as well as requesting a page where the demo user can have open in another tab or window to walk through it
+
+T54 accessibility fixes put in place for page changes, browser title, skip navbar, and screen reader issues

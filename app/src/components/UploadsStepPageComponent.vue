@@ -145,6 +145,7 @@ async function saveDocument(itemKey: string) {
                 <input
                   :id="`file-${item.item_key}`"
                   type="file"
+                  aria-required="true"
                   class="form-control"
                   :class="{ 'is-invalid': forms[item.item_key].errors.file }"
                   accept="image/jpeg,image/png,application/pdf"

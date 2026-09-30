@@ -103,6 +103,7 @@ async function save() {
                 <input
                   id="replacement-file"
                   type="file"
+                  aria-required="true"
                   class="form-control"
                   :class="{ 'is-invalid': form.errors.file }"
                   accept="image/jpeg,image/png,application/pdf"

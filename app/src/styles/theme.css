@@ -90,3 +90,9 @@ h2,
     break-inside: avoid;
   }
 }
+
+/* Accessibility (T54): after a page change, focus moves to the page heading so screen readers
+   announce it. The heading isn't interactive, so it doesn't show a focus outline. */
+main h1[tabindex='-1']:focus {
+  outline: none;
+}

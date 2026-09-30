@@ -27,82 +27,87 @@ const routes = [
   {
     path: '/components',
     component: ComponentsPageComponent,
+    meta: { title: 'Components' },
   },
   {
     path: '/sign-in',
     component: SignInPageComponent,
+    meta: { title: 'Coordinator sign-in' },
   },
   {
     path: '/dashboard',
     component: DashboardPageComponent,
-    meta: { requiresCoordinator: true },
+    meta: { requiresCoordinator: true, title: 'Dashboard' },
   },
   {
     path: '/messages',
     component: AgencyOutboxPageComponent,
-    meta: { requiresCoordinator: true },
+    meta: { requiresCoordinator: true, title: 'Agency outbox' },
   },
   {
     path: '/worklist',
     component: WorklistPageComponent,
-    meta: { requiresCoordinator: true },
+    meta: { requiresCoordinator: true, title: 'Expiration worklist' },
   },
   {
     path: '/caregivers/:id/report',
     component: ComplianceReportPageComponent,
-    meta: { requiresCoordinator: true },
+    meta: { requiresCoordinator: true, title: 'Compliance report' },
   },
   {
     path: '/caregivers/:id',
     component: CaregiverRecordPageComponent,
-    meta: { requiresCoordinator: true },
+    meta: { requiresCoordinator: true, title: 'Caregiver record' },
   },
   {
     path: '/applicant/sign-in',
     component: ApplicantSignInPageComponent,
+    meta: { title: 'Applicant sign-in' },
   },
   {
     path: '/outbox',
     component: OutboxPageComponent,
+    meta: { title: 'Demo outbox' },
   },
   {
     path: '/auth',
     component: AuthPageComponent,
+    meta: { title: 'Signing you in' },
   },
   {
     path: '/applicant',
     component: ApplicantHomePageComponent,
-    meta: { requiresApplicant: true },
+    meta: { requiresApplicant: true, title: 'Your application' },
   },
   {
     path: '/applicant/intake/identity',
     component: IdentityStepPageComponent,
-    meta: { requiresApplicant: true },
+    meta: { requiresApplicant: true, title: 'About you' },
   },
   {
     path: '/applicant/intake/needed',
     component: NeededStepPageComponent,
-    meta: { requiresApplicant: true },
+    meta: { requiresApplicant: true, title: "What you'll need" },
   },
   {
     path: '/applicant/intake/uploads',
     component: UploadsStepPageComponent,
-    meta: { requiresApplicant: true },
+    meta: { requiresApplicant: true, title: 'Add your documents' },
   },
   {
     path: '/applicant/intake/disclosure',
     component: ConsentStepPageComponent,
-    meta: { requiresApplicant: true, consentType: 'disclosure' },
+    meta: { requiresApplicant: true, consentType: 'disclosure', title: 'Background check disclosure' },
   },
   {
     path: '/applicant/intake/authorization',
     component: ConsentStepPageComponent,
-    meta: { requiresApplicant: true, consentType: 'authorization' },
+    meta: { requiresApplicant: true, consentType: 'authorization', title: 'Authorization for background checks' },
   },
   {
     path: '/applicant/intake/review',
     component: ReviewStepPageComponent,
-    meta: { requiresApplicant: true },
+    meta: { requiresApplicant: true, title: 'Review and submit' },
   },
   {
     // Never shown: the guard in main.ts sends the applicant on to their next unfinished step.
@@ -113,17 +118,23 @@ const routes = [
   {
     path: '/applicant/replacements/:itemKey',
     component: ReplacementPageComponent,
-    meta: { requiresApplicant: true },
+    meta: { requiresApplicant: true, title: 'Upload a replacement' },
   },
   {
     path: '/apply/:agencySlug',
     component: IntakeStartPageComponent,
+    meta: { title: 'Apply' },
   },
 ];
 
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
+});
+
+// Each page has its own browser title, so screen readers and tabs say where you are (T54).
+router.afterEach((to) => {
+  document.title = typeof to.meta.title === 'string' ? `${to.meta.title} · CareMatch` : 'CareMatch';
 });
 
 export default router;
