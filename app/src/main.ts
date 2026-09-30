@@ -4,7 +4,7 @@ import '@fontsource/roboto/400.css';
 import '@fontsource/roboto/500.css';
 import '@fontsource/roboto/700.css';
 import './styles/theme.css';
-import { createApp, ref } from 'vue';
+import { createApp, reactive, ref } from 'vue';
 import App from './App.vue';
 import router from './router';
 import { createBrowserBackend } from './data/browserBackend';
@@ -12,12 +12,13 @@ import { createDataLayer, createSystemDataLayer, dataLayerKey } from './data/dat
 import { resumeStep } from './data/intake';
 import { runDelayedCheckJob, runExpirationJob } from './data/jobs';
 import { fetchSeedFiles } from './data/seed';
-import { sessionKey } from './session';
+import { demoDataKey, sessionKey, type DemoDataState } from './session';
 
 const app = createApp(App);
 
 const backend = createBrowserBackend();
 const dataLayer = createDataLayer(backend);
+const demoData = reactive<DemoDataState>({ loading: true, error: '' });
 // Jobs run once the seed is loaded, using the demo date when one is set (ADR-13). Changing the
 // demo date reloads the page, so the jobs run again here.
 dataLayer
@@ -29,8 +30,13 @@ dataLayer
   })
   .catch((error) => {
     console.error('There was a problem loading the demo seed data.', error);
+    demoData.error = "We couldn't load the demo data. Please reload the page.";
+  })
+  .finally(() => {
+    demoData.loading = false;
   });
 app.provide(dataLayerKey, dataLayer);
+app.provide(demoDataKey, demoData);
 app.provide(sessionKey, ref(dataLayer.getSignedInUser()));
 
 // Coordinator and applicant pages send anyone without that role to the matching sign-in (ADR-05).

@@ -532,3 +532,128 @@ export function resumeStep(dataLayer: DataLayer): string {
   }
   return '/applicant/intake/review';
 }
+
+export interface StatusItem {
+  item_key: string;
+  name: string;
+  status: string;
+  /** What the item is waiting on, in plain words. */
+  waitingOn: string;
+  /** False once the item is done (Verified). */
+  outstanding: boolean;
+}
+
+export interface ApplicantStatus {
+  agencyName: string;
+  lifecycleState: string;
+  /** The overall status in plain words for the applicant. */
+  summary: string;
+  items: StatusItem[];
+}
+
+/** Whole days from a `YYYY-MM-DD…` date to today, counting calendar days. */
+function daysSince(date: string, today: Date): number {
+  const [year, month, day] = date.slice(0, 10).split('-').map(Number);
+  const start = new Date(year, month - 1, day);
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return Math.max(0, Math.round((end.getTime() - start.getTime()) / 86_400_000));
+}
+
+function startedAgo(days: number): string {
+  if (days === 0) {
+    return 'Started today';
+  }
+  return `Started ${days} day${days === 1 ? '' : 's'} ago`;
+}
+
+/**
+ * The signed-in applicant's own status (R6, R18, R16): an overall line in plain words and,
+ * for each required item, its status and what it's waiting on, with the days since an
+ * outstanding check was started. An exclusion match isn't named to the applicant; the
+ * coordinator explains it (C1, C8). Returns undefined when there's no application.
+ */
+export function applicantStatus(dataLayer: DataLayer): ApplicantStatus | undefined {
+  const caregiverId = dataLayer.getSignedInUser()?.caregiver_id;
+  const caregiver = caregiverId ? dataLayer.get('caregivers', caregiverId) : undefined;
+  if (!caregiver) {
+    return undefined;
+  }
+  const agencyName = dataLayer.get('agencies', caregiver.agency_id)?.name ?? 'Your agency';
+  const today = dataLayer.today();
+  const submitted = caregiver.lifecycle_state !== 'Intake In Progress';
+
+  const summaries: Record<string, string> = {
+    'Intake In Progress': "Your application isn't submitted yet.",
+    'Intake Complete': `Submitted. Waiting for ${agencyName} to start your checks.`,
+    'Screening In Progress': 'Your checks are in progress.',
+    Eligible: `All your checks are done. ${agencyName} will make the final decision.`,
+    Cleared: `You're cleared to work with ${agencyName}.`,
+    'Not Current': `Something on your file has expired. ${agencyName} will ask you for a replacement.`,
+    'Review Required': `${agencyName} is reviewing your checks. They'll contact you.`,
+  };
+
+  const templateItems = dataLayer
+    .list('template_items')
+    .filter((item) => item.template_id === caregiver.template_id)
+    .sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
+  const requiredItems = dataLayer.list('required_items').filter((item) => item.caregiver_id === caregiver.id);
+  const documents = dataLayer.list('documents').filter((document) => document.caregiver_id === caregiver.id);
+
+  const items: StatusItem[] = [];
+  for (const templateItem of templateItems) {
+    const item = requiredItems.find((row) => row.item_key === templateItem.item_key);
+    if (!item) {
+      continue;
+    }
+    const isUpload = templateItem.requires_upload === 'true';
+    let waitingOn: string;
+    switch (item.status) {
+      case 'Pending':
+        if (isUpload) {
+          waitingOn = documents.some((document) => document.item_key === item.item_key)
+            ? `Waiting on ${agencyName} to review it`
+            : 'Waiting on you to upload it';
+        } else {
+          waitingOn = submitted ? `Waiting on ${agencyName} to start it` : 'Starts after you submit your application';
+        }
+        break;
+      case 'Ordered':
+        waitingOn = `In progress. ${startedAgo(daysSince(item.ordered_at, today))}.`;
+        break;
+      case 'Delayed':
+        waitingOn = `Taking longer than usual. ${startedAgo(daysSince(item.ordered_at, today))}. ${agencyName} is following up.`;
+        break;
+      case 'Retryable':
+        waitingOn = `Waiting on ${agencyName} to try again`;
+        break;
+      case 'Manual Verification':
+        waitingOn = `Waiting on ${agencyName} to check it by hand`;
+        break;
+      case 'Verified':
+        waitingOn = item.expiration_date ? `Done. Good until ${item.expiration_date}.` : 'Done.';
+        break;
+      case 'Expiring':
+        waitingOn = `Expires on ${item.expiration_date}. You'll be asked for a replacement.`;
+        break;
+      case 'Expired':
+        waitingOn = `Expired on ${item.expiration_date}. ${agencyName} will ask you for a replacement.`;
+        break;
+      default:
+        waitingOn = '';
+    }
+    items.push({
+      item_key: item.item_key,
+      name: templateItem.name,
+      status: item.status,
+      waitingOn,
+      outstanding: item.status !== 'Verified',
+    });
+  }
+
+  return {
+    agencyName,
+    lifecycleState: caregiver.lifecycle_state,
+    summary: summaries[caregiver.lifecycle_state] ?? '',
+    items,
+  };
+}
