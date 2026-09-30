@@ -53,3 +53,9 @@ T46 updated demo walkthrough requirements to be short and simple instead of a fu
 T54 accessibility fixes put in place for page changes, browser title, skip navbar, and screen reader issues
 
 T55 speed tests reveleaed multiple bugs.  worked with claude to fix them
+
+# Reflection
+
+Everything generally went well as the specs, design system, and tasks were heavily thought out.  There were issues caught during the process of actually having Claude code it, and was able to resolve them with my thoughts as well as occasionally using Claude's recommendations.
+
+In the future, I would take more time to develop stronger acceptance criteria as my current list is weak.
