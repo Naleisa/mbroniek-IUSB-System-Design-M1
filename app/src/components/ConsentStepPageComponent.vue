@@ -48,7 +48,9 @@ function decline() {
   saves.value += 1;
 }
 
-const next = computed(() => (type.value === 'disclosure' ? '/applicant/intake/authorization' : '/applicant'));
+const next = computed(() =>
+  type.value === 'disclosure' ? '/applicant/intake/authorization' : '/applicant/intake/review',
+);
 const back = computed(() => (type.value === 'disclosure' ? '/applicant/intake/uploads' : '/applicant/intake/disclosure'));
 
 function accept() {
@@ -63,7 +65,6 @@ function accept() {
     return;
   }
   saves.value += 1;
-  // T37 adds submitting the application after authorization; until then it ends on the applicant's home page.
   router.push(next.value);
 }
 </script>

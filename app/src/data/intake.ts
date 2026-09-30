@@ -1,5 +1,6 @@
 import { CONSENT_WORDING_VERSION } from './consentWording';
 import type { DataLayer } from './dataLayer';
+import { transitionCaregiver } from './lifecycle';
 import { formatLocalDateTime } from './relativeDates';
 import type { Row } from './storageBackend';
 import type { Actor, ConsentDecision, ConsentType } from './types';
@@ -384,4 +385,114 @@ export function declineAuthorization(dataLayer: DataLayer, actor: Actor): Consen
     `Screening has stopped for ${name}. The application is kept.`,
   );
   return result;
+}
+
+export interface ChecklistLine {
+  key: string;
+  /** What's needed, such as "Your TB test result". */
+  label: string;
+  done: boolean;
+  /** Plain-language note when it isn't done, such as "Add your TB test result." */
+  todo: string;
+  /** The intake step that fixes it. */
+  route: string;
+}
+
+/**
+ * What a complete intake needs (R7): identity details and an SSN on file, a document
+ * for every item the template asks the applicant to upload, the disclosure read, and
+ * the authorization given. The review screen and `submitIntake` both use this list.
+ */
+export function intakeChecklist(dataLayer: DataLayer): ChecklistLine[] {
+  const caregiverId = dataLayer.getSignedInUser()?.caregiver_id;
+  const caregiver = caregiverId ? dataLayer.get('caregivers', caregiverId) : undefined;
+  if (!caregiver) {
+    return [];
+  }
+  const identityDone = Boolean(
+    caregiver.first_name &&
+      caregiver.last_name &&
+      caregiver.email &&
+      caregiver.phone &&
+      caregiver.date_of_birth &&
+      caregiver.ssn_token,
+  );
+  const lines: ChecklistLine[] = [
+    {
+      key: 'identity',
+      label: 'About you',
+      done: identityDone,
+      todo: 'Finish your details in About you.',
+      route: '/applicant/intake/identity',
+    },
+  ];
+
+  const documents = dataLayer.list('documents').filter((row) => row.caregiver_id === caregiver.id);
+  for (const item of whatYoullNeed(dataLayer).upload) {
+    lines.push({
+      key: item.item_key,
+      label: item.name,
+      done: documents.some((document) => document.item_key === item.item_key),
+      todo: `Add your ${item.name}.`,
+      route: '/applicant/intake/uploads',
+    });
+  }
+
+  const authorization = currentConsent(dataLayer, 'authorization')?.decision;
+  lines.push(
+    {
+      key: 'disclosure',
+      label: 'Background check disclosure',
+      done: currentConsent(dataLayer, 'disclosure')?.decision === 'acknowledged',
+      todo: 'Read the background check disclosure.',
+      route: '/applicant/intake/disclosure',
+    },
+    {
+      key: 'authorization',
+      label: 'Authorization for background checks',
+      done: authorization === 'granted',
+      todo:
+        authorization === 'declined'
+          ? "You didn't authorize the background checks. Authorize them to submit."
+          : 'Give your authorization for the background checks.',
+      route: '/applicant/intake/authorization',
+    },
+  );
+  return lines;
+}
+
+export type SubmitResult = { ok: true } | { ok: false; missing: string[] };
+
+/**
+ * Submits a complete intake (R7, ADR-08): moves the record from Intake In Progress to
+ * Intake Complete as the applicant and emails the agency's coordinators. Refuses, naming
+ * each missing piece, until the checklist is complete; refuses a second submission.
+ */
+export function submitIntake(dataLayer: DataLayer, actor: Actor): SubmitResult {
+  const caregiverId = dataLayer.getSignedInUser()?.caregiver_id;
+  const caregiver = caregiverId ? dataLayer.get('caregivers', caregiverId) : undefined;
+  if (!caregiver) {
+    throw new Error('Please sign in to continue your application.');
+  }
+  if (caregiver.lifecycle_state !== 'Intake In Progress') {
+    return { ok: false, missing: ['Your application has already been submitted.'] };
+  }
+  const missing = intakeChecklist(dataLayer)
+    .filter((line) => !line.done)
+    .map((line) => line.todo);
+  if (missing.length > 0) {
+    return { ok: false, missing };
+  }
+
+  const moved = transitionCaregiver(dataLayer, caregiver.id, 'Intake Complete', actor);
+  if (!moved.ok) {
+    return { ok: false, missing: [moved.reason] };
+  }
+  const name = `${caregiver.first_name} ${caregiver.last_name}`;
+  const agencyName = dataLayer.get('agencies', caregiver.agency_id)?.name ?? 'the agency';
+  dataLayer.notifyMyCoordinators(
+    `New application: ${name}`,
+    `${name} submitted a complete application to ${agencyName}. It's ready for screening.`,
+  );
+  return { ok: true };
 }
