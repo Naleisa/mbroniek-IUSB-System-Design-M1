@@ -96,7 +96,7 @@ Phases follow plan.md Section 6. All new work lives in `/app` (ADR-02); no task 
 
 | ID | Task | Done when | Traces to (R# / ADR#) | Depends on | Status |
 |----|------|-----------|--------------------------|------------|--------|
-| T50 | Build the printable single-caregiver compliance report page with every required item, its evidence, and its verification history, and a print stylesheet for "Save as PDF". | Manual check: open the report for a fully screened seeded caregiver and find every template item with source, method, dates, evidence, and audit history; another agency's coordinator is refused; and the print preview hides the navbar and demo controls. | R13, R2, ADR-14 | T9, T21, T44 | Not started |
+| T50 | Build the printable single-caregiver compliance report page with every required item, its evidence, and its verification history, and a print stylesheet for "Save as PDF". | Manual check: open the report for a fully screened seeded caregiver and find every template item with source, method, dates, evidence, and audit history; another agency's coordinator is refused; and the print preview hides the navbar and demo controls. | R13, R2, ADR-14 | T9, T21, T44 | Done |
 | T51 | Add a "Compliance report" action to the record view that opens the report ready to print or save as PDF. | Manual check: click the action and the complete report loads within 30 seconds. | R13, ADR-14, NFR Performance | T42, T50 | Not started |
 
 ### Phase 7 — Acceptance and Go/No-Go

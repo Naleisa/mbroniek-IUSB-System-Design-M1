@@ -77,3 +77,16 @@ h2,
   --bs-card-border-width: 1px;
   --bs-card-border-color: #dee2e6;
 }
+
+/* Printing (T50, ADR-14): the compliance report prints as a plain document. The navbar, demo
+   controls, and buttons carry Bootstrap's d-print-none; items don't split across pages. */
+@media print {
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .report-block {
+    break-inside: avoid;
+  }
+}

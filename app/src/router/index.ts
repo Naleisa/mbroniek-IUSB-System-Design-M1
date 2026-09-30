@@ -4,6 +4,7 @@ import ComponentsPageComponent from '../components/ComponentsPageComponent.vue';
 import SignInPageComponent from '../components/SignInPageComponent.vue';
 import DashboardPageComponent from '../components/DashboardPageComponent.vue';
 import CaregiverRecordPageComponent from '../components/CaregiverRecordPageComponent.vue';
+import ComplianceReportPageComponent from '../components/ComplianceReportPageComponent.vue';
 import WorklistPageComponent from '../components/WorklistPageComponent.vue';
 import AgencyOutboxPageComponent from '../components/AgencyOutboxPageComponent.vue';
 import ApplicantSignInPageComponent from '../components/ApplicantSignInPageComponent.vue';
@@ -44,6 +45,11 @@ const routes = [
   {
     path: '/worklist',
     component: WorklistPageComponent,
+    meta: { requiresCoordinator: true },
+  },
+  {
+    path: '/caregivers/:id/report',
+    component: ComplianceReportPageComponent,
     meta: { requiresCoordinator: true },
   },
   {
