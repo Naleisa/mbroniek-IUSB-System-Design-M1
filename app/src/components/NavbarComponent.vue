@@ -11,6 +11,13 @@ const dataLayer = inject(dataLayerKey)!;
 const session = inject(sessionKey)!;
 const router = useRouter();
 
+// Signed-in navigation (T66): each role's main page and Sign out, so nobody has to remember URLs.
+function signOut() {
+  dataLayer.signOut();
+  session.value = undefined;
+  router.push('/');
+}
+
 // Demo control (ADR-21): an inline confirmation, not a browser pop-up.
 const confirmingReset = ref(false);
 const resetting = ref(false);
@@ -60,6 +67,14 @@ function backToToday() {
       <!-- 160 x 40 keeps the logo above its 120px minimum width without stretching it -->
       <img :src="logoUrl" alt="CareMatch" width="160" height="40" />
     </router-link>
+
+    <div v-if="session" class="d-flex flex-wrap align-items-center gap-2 py-1">
+      <router-link v-if="session.role === 'coordinator'" to="/dashboard" class="btn btn-link btn-sm">Dashboard</router-link>
+      <router-link v-else-if="session.role === 'applicant'" to="/applicant" class="btn btn-link btn-sm">
+        Your application
+      </router-link>
+      <button type="button" class="btn btn-link btn-sm" @click="signOut">Sign out</button>
+    </div>
 
     <div class="ms-auto d-flex flex-wrap align-items-end justify-content-end gap-2 py-1">
       <div>

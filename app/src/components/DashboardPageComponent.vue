@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue';
-import { useRouter } from 'vue-router';
 import { coordinatorDashboard, type Highlight } from '../data/dashboard';
 import { dataLayerKey } from '../data/dataLayer';
 import { demoDataKey, sessionKey } from '../session';
@@ -12,7 +11,6 @@ import StatusBadge from './StatusBadge.vue';
 const dataLayer = inject(dataLayerKey)!;
 const session = inject(sessionKey)!;
 const demoData = inject(demoDataKey)!;
-const router = useRouter();
 
 const dashboard = computed(() => {
   void demoData.loading;
@@ -20,11 +18,6 @@ const dashboard = computed(() => {
 });
 const highlightOrder: Highlight[] = ['Incomplete intake', 'Declined consent', 'Delayed check'];
 
-function signOut() {
-  dataLayer.signOut();
-  session.value = undefined;
-  router.push('/sign-in');
-}
 </script>
 
 <template>
@@ -99,6 +92,5 @@ function signOut() {
       </section>
     </template>
 
-    <button type="button" class="btn btn-outline-primary" @click="signOut">Sign out</button>
   </section>
 </template>

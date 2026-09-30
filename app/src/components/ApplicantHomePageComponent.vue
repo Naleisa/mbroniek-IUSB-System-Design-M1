@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, inject } from 'vue';
-import { useRouter } from 'vue-router';
 import { dataLayerKey } from '../data/dataLayer';
 import { applicantStatus, resumeStep } from '../data/intake';
 import { demoDataKey, sessionKey } from '../session';
@@ -11,7 +10,6 @@ import StatusBadge from './StatusBadge.vue';
 const dataLayer = inject(dataLayerKey)!;
 const session = inject(sessionKey)!;
 const demoData = inject(demoDataKey)!;
-const router = useRouter();
 
 const status = computed(() => {
   void demoData.loading;
@@ -21,11 +19,6 @@ const outstanding = computed(() => status.value?.items.filter((item) => item.out
 const done = computed(() => status.value?.items.filter((item) => !item.outstanding) ?? []);
 const nextStep = computed(() => resumeStep(dataLayer));
 
-function signOut() {
-  dataLayer.signOut();
-  session.value = undefined;
-  router.push('/applicant/sign-in');
-}
 </script>
 
 <template>
@@ -109,7 +102,7 @@ function signOut() {
         </template>
 
         <p class="small mt-4 mb-2">Signed in as <strong>{{ session?.display_name }}</strong></p>
-        <button type="button" class="btn btn-outline-primary w-100" @click="signOut">Sign out</button>
+
       </div>
     </div>
   </div>
