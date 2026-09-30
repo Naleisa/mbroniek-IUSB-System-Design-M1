@@ -92,7 +92,10 @@ export function coordinatorDashboard(dataLayer: DataLayer): Dashboard {
       Eligible: 'Ready to mark Cleared',
       'Review Required': 'Review the possible exclusion match',
     };
-    if (stateSteps[caregiver.lifecycle_state]) {
+    const mine = requiredItems.filter((row) => row.caregiver_id === caregiver.id);
+    if (caregiver.lifecycle_state === 'Review Required' && mine.some((row) => row.result === 'Confirmed match')) {
+      steps.push('Confirmed exclusion match: do not clear');
+    } else if (stateSteps[caregiver.lifecycle_state]) {
       steps.push(stateSteps[caregiver.lifecycle_state]);
     }
     for (const item of requiredItems.filter((row) => row.caregiver_id === caregiver.id)) {
@@ -101,8 +104,12 @@ export function coordinatorDashboard(dataLayer: DataLayer): Dashboard {
         steps.push(`${name} expired on ${item.expiration_date}`);
       } else if (item.status === 'Retryable') {
         steps.push(`${name} failed: order it again`);
-      } else if (item.status === 'Manual Verification' && item.result !== 'Possible match') {
-        // A possible exclusion match is covered by the Review Required step above.
+      } else if (
+        item.status === 'Manual Verification' &&
+        item.result !== 'Possible match' &&
+        item.result !== 'Confirmed match'
+      ) {
+        // An exclusion match is covered by the Review Required step above.
         steps.push(`${name}: verify it by hand`);
       } else if (item.status === 'Expiring') {
         steps.push(`${name} expires on ${item.expiration_date}`);

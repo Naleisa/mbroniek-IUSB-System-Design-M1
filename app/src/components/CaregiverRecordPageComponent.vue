@@ -5,6 +5,7 @@ import { dataLayerKey } from '../data/dataLayer';
 import { clearRecord } from '../data/lifecycle';
 import { caregiverRecord } from '../data/record';
 import { checkServiceKey, demoDataKey, sessionKey } from '../session';
+import ExclusionReviewCard from './ExclusionReviewCard.vue';
 import ItemReviewActions from './ItemReviewActions.vue';
 import StatusBadge from './StatusBadge.vue';
 
@@ -113,6 +114,12 @@ function show(value: string): string {
           </dl>
         </div>
       </div>
+
+      <ExclusionReviewCard
+        v-if="record.lifecycleState === 'Review Required'"
+        :record="record"
+        @changed="refresh += 1"
+      />
 
       <div v-if="record.lifecycleState === 'Cleared' || CLEARABLE_STATES.includes(record.lifecycleState)" class="card mb-4">
         <div class="card-body">

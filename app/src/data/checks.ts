@@ -394,3 +394,85 @@ export function markUnreadable(dataLayer: DataLayer, requiredItemId: string, act
   );
   return { ok: true, item: updated };
 }
+
+/** Exclusion results a coordinator still has to decide, and the result recorded once a match is confirmed (T46). */
+export const POSSIBLE_MATCH = 'Possible match';
+export const CONFIRMED_MATCH = 'Confirmed match';
+
+export type ExclusionDecision = 'not-a-match' | 'confirm-match';
+
+/**
+ * A coordinator's decision on an exclusion match (T46, R17, R19, C1). Nothing automated can
+ * do this. "Not a match" moves the record back to Screening In Progress and verifies each
+ * matched item by hand with the coordinator's note (T64), then checks eligibility.
+ * "Confirm the match" leaves the record in Review Required and records the decision on
+ * each matched item. Either way the change is audited under the coordinator.
+ */
+export function reviewExclusionMatch(
+  dataLayer: DataLayer,
+  caregiverId: string,
+  decision: ExclusionDecision,
+  details: { note: string; expirationDate?: string },
+  actor: Actor,
+): ReviewResult {
+  if (actor.role !== 'coordinator') {
+    return { ok: false, reason: 'Only a coordinator can review an exclusion match.' };
+  }
+  const caregiver = dataLayer.get('caregivers', caregiverId);
+  if (!caregiver) {
+    return { ok: false, reason: 'We could not find that caregiver record.' };
+  }
+  if (caregiver.lifecycle_state !== 'Review Required') {
+    return { ok: false, reason: 'Only a record in Review Required has a match to review.' };
+  }
+  const matched = dataLayer
+    .list('required_items')
+    .filter((item) => item.caregiver_id === caregiverId && item.result === POSSIBLE_MATCH);
+  if (matched.length === 0) {
+    return { ok: false, reason: 'There is no possible match left to review on this record.' };
+  }
+  const note = details.note.trim();
+  if (!note) {
+    return {
+      ok: false,
+      reason:
+        decision === 'not-a-match'
+          ? 'Describe how you confirmed it is not a match.'
+          : 'Describe why you are confirming the match.',
+    };
+  }
+
+  if (decision === 'confirm-match') {
+    const today = formatLocalDateTime(dataLayer.today()).slice(0, 10);
+    let last: Row | undefined;
+    for (const item of matched) {
+      last = dataLayer.update(
+        'required_items',
+        item.id,
+        { result: CONFIRMED_MATCH, notes: `Confirmed as a match by ${actor.name} on ${today}: ${note}` },
+        actor,
+      );
+    }
+    return { ok: true, item: last! };
+  }
+
+  // Check the expiration date before anything moves, so a refusal leaves the record as it was.
+  const expirationDate = (details.expirationDate ?? '').trim();
+  const today = formatLocalDateTime(dataLayer.today()).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(expirationDate) || expirationDate < today) {
+    return { ok: false, reason: 'Enter a future expiration date for the exclusion check.' };
+  }
+  const moved = transitionCaregiver(dataLayer, caregiverId, 'Screening In Progress', actor);
+  if (!moved.ok) {
+    return moved;
+  }
+  let last: Row | undefined;
+  for (const item of matched) {
+    const verified = verifyManually(dataLayer, item.id, { note, expirationDate }, actor);
+    if (!verified.ok) {
+      return verified;
+    }
+    last = verified.item;
+  }
+  return { ok: true, item: last! };
+}

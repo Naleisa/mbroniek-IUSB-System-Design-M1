@@ -29,7 +29,7 @@ export interface RecordItem {
   document?: { id: string; file_name: string; file_type: string; expiration_date: string; uploaded_at: string };
   /** A Pending document review item with a document: can be marked verified or unreadable (T44). */
   reviewable: boolean;
-  /** In Manual Verification and not a possible exclusion match (T46 decides those): can be verified by hand (T44, T64). */
+  /** In Manual Verification and not an exclusion match (T46 decides those): can be verified by hand (T44, T64). */
   canVerifyByHand: boolean;
 }
 
@@ -41,6 +41,8 @@ export interface CaregiverRecord {
   stateChangedAt: string;
   email: string;
   phone: string;
+  /** Shown only in the exclusion match review, where the match is compared against it (T46). */
+  dateOfBirth: string;
   ssnLast4: string;
   templateName: string;
   templateIsSample: boolean;
@@ -134,7 +136,8 @@ export function caregiverRecord(dataLayer: DataLayer, caregiverId: string): Care
       orderAction: VENDOR_METHODS.includes(item.method) ? (ORDER_ACTIONS[item.status] ?? '') : '',
       document,
       reviewable: item.method === 'Document review' && item.status === 'Pending' && Boolean(document),
-      canVerifyByHand: item.status === 'Manual Verification' && item.result !== 'Possible match',
+      canVerifyByHand:
+        item.status === 'Manual Verification' && item.result !== 'Possible match' && item.result !== 'Confirmed match',
     };
   });
 
@@ -151,6 +154,7 @@ export function caregiverRecord(dataLayer: DataLayer, caregiverId: string): Care
     stateChangedAt: caregiver.state_changed_at ?? '',
     email: caregiver.email,
     phone: caregiver.phone,
+    dateOfBirth: caregiver.date_of_birth ?? '',
     ssnLast4: caregiver.ssn_last4 ?? '',
     templateName: template?.name ?? '',
     templateIsSample: template?.is_sample === 'true',
