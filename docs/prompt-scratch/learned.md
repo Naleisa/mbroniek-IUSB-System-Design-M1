@@ -31,3 +31,5 @@ T23 introduced an option question regarding manual verification.  cleared up the
 T25 discovered a bug that it had implemented earlier that wasn't getting tested for.  Had claude fix the bug with recommendations from me after clearing up what caused the bug.
 
 T29 was dropped as we're not introducing supabase during the demo.
+
+T31 cleared up how we'll hide SSNs during application filling

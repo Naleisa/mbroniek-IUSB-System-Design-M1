@@ -50,6 +50,8 @@ export interface DataLayer {
    * stands in for that person's own inbox, so it works while signed out.
    */
   outboxFor(email: string): Row[];
+  /** Whether another account already uses this email, so two applications never share one sign-in address. */
+  emailInUse(email: string, exceptUserId: string): boolean;
   /** Loads the seed on first start only. Returns true when the seed was loaded. */
   loadSeed(getSeedFiles: () => Promise<SeedFiles>, today?: Date): Promise<boolean>;
   /** "Reset demo data" (T59): clears all stored data, documents, the session, and the demo date, then reloads the seed. */
@@ -585,6 +587,11 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
         .readTable('notifications')
         .filter((message) => message.recipient_user_id === user.id)
         .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    },
+
+    emailInUse: (email, exceptUserId) => {
+      const address = email.trim().toLowerCase();
+      return backend.readTable('users').some((row) => row.id !== exceptUserId && row.email.toLowerCase() === address);
     },
 
     loadSeed,

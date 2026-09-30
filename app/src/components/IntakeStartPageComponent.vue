@@ -19,8 +19,7 @@ function startApplication() {
     return;
   }
   session.value = dataLayer.getSignedInUser();
-  // The identity step comes next in T31; until then the applicant lands on their home page.
-  router.push('/applicant');
+  router.push('/applicant/intake/identity');
 }
 </script>
 

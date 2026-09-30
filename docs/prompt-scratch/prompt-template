@@ -1,21 +1,27 @@
-You are continuing to adapt the base web application template. You are implementing exactly ONE task from tasks.md: [T59]
+You are continuing to adapt the base web application template. You are implementing exactly ONE task from tasks.md: [TASK ID]
+(If I send only a task ID, such as "T32", apply this whole template to that task.)
 
 Before writing any code:
-1. Read tasks.md and find task [T59]. Note what it traces to (requirement and/or ADR IDs).
+1. Read tasks.md and find task [TASK ID]. Note what it traces to (requirement and/or ADR IDs).
 2. Look up that requirement and its acceptance criteria in specification.md.
 3. Look up any referenced ADR(s) and the tech stack in plan.md.
 4. Look up relevant colors, typography, and component rules in design-system.md.
 5. Check tasks.md for what this task depends on — confirm those are already marked done.
 
-Restate back to me, briefly, what you found in steps 1–5 before proceeding, so I can confirm it's correct.
+Restate back to me, briefly, what you found in steps 1–5 before proceeding, so I can confirm it's correct. Then list each decision the documents don't settle, with your recommendation and why, and wait for my approval.
 
 CONSTRAINTS
-- Build only what task [T59] describes. Do not build, fix, or refactor anything outside its scope — note other issues you notice, don't fix them.
+- Build only what task [TASK ID] describes. Do not build, fix, or refactor anything outside its scope — note other issues you notice, don't fix them.
 - We are adapting a base web app template. Follow the tech stack as it is and the design system documented. Do not introduce new styles, libraries, or patterns not already established.
 - Do not add features, fields, or behavior beyond what the requirement states.
 - If anything is ambiguous or the documents don't fully answer it, stop and ask — do not guess.
+- If the task list has a gap (work no task covers), point it out and propose a task instead of quietly building it.
+- Before reporting, run `npx vue-tsc --noEmit`, `npm test`, and `npm run build` in /app.
 
 OUTPUT
 1. The code/changes needed to complete this task.
 2. A short plain-language explanation of what you built and why.
-3. Restate the acceptance criteria (from specation.md) and explain exactly how to manually verify them.
+3. Restate the acceptance criteria (from specification.md and the task's "Done when") and explain exactly how to manually verify them.
+
+AFTER I CONFIRM
+- Leave the task status unchanged until I confirm it passed. Then mark it Done in tasks.md and add a row to docs/manual-checks.md.

@@ -2,155 +2,146 @@
 
 Handoff notes for picking the CareMatch build back up, written for Mike and for a future Claude session. Read this first, then `docs/design/tasks.md` for the live task list. Nothing here overrides the design docs; where they differ, the design docs win and this file is stale.
 
+*Last refreshed during T31 (identity step built, awaiting Mike's confirmation).*
+
 ## 1. Where things stand
 
 | Phase | Tasks | Status |
 |---|---|---|
 | 0 — Setup | T1, T57, T2, T3, T4, T61 | All Done |
-| 1 — Data layer, rules, audit | T5–T13 Done; **T58 In progress** (seed CSVs exist, test not written); **T59 Not started** | |
-| 2 — Sign-in and access | T14, T15, T16, T17 Done; **T18, T19 Not started** | |
-| 3 — Mock vendors, jobs, outbox | T20–T28, T60 | Not started (T29 dropped) |
-| 4 — Applicant intake | T30–T40 | Not started |
+| 1 — Data layer, rules, audit | T5–T13, T58, T59 | All Done |
+| 2 — Sign-in and access | T14–T19 | All Done |
+| 3 — Mock vendors, jobs, outbox | T20–T28, T64, T60 | All Done (T29 dropped) |
+| 4 — Applicant intake | T30 Done; **T31 built, awaiting confirmation**; T62, T32–T40 Not started | |
 | 5 — Coordinator screens | T41–T49 | Not started |
 | 6 — Compliance report | T50, T51 | Not started |
-| 7 — Acceptance and go/no-go | T52–T56 | Not started |
+| 7 — Acceptance and go/no-go | T52–T56, T63 | Not started |
 
-- **Tests:** 14 Vitest files, 61 tests, all passing.
-- **Git:** everything committed. Last commit `81ed834` "T17 blocker fixing, applicant filter, and context saving". Mike commits and pushes himself, usually one commit per task.
+- **Tests:** 30 Vitest files, 147 tests, all passing. Vitest prints an informational "fsModuleCache" speed tip; it was deliberately left off.
+- **Git:** Mike commits and pushes himself, one commit per task. Last commit `ce18f4f` "T30 applicant intake initial screen".
 - **Live site:** app at https://naleisa.github.io/mbroniek-IUSB-System-Design-M1/#/ and docs at https://naleisa.github.io/mbroniek-IUSB-System-Design-M1/docs/ — both redeploy on every push to `main`.
 - **Blocked / Questions table:** no open items.
-
-### Suggested next tasks, with what's already known
-
-1. **T58 — caregiver seed test.** The CSVs are done. Write a Vitest test that loads the full seed (use the `import.meta.glob('../../public/seed/*.csv', { query: '?raw', import: 'default', eager: true })` pattern from `agencyFilter.test.ts`) and checks: all 7 lifecycle states among Agency A caregivers, caregivers in both agencies, no `ssn` on caregiver rows and every token resolving to a 900-series SSN through `createVendorVault`, and seeded audit history for every Cleared caregiver (cg-06, cg-07, cg-12). Read unfiltered data with `createSystemDataLayer`.
-2. **T59 — "Reset demo data".** Needs a data-layer method that clears storage (all `carematch:*` localStorage keys, the `carematch` IndexedDB documents store, the session) and reloads the seed; then a button (likely in the navbar, demo only). Clearing ends any signed-in session.
-3. **T18 — documents behind the access filter.** `putDocument`/`getDocument`/`listDocuments` in `dataLayer.ts` are not filtered yet. Apply the same rule as tables using each document's `meta.agency_id` and `meta.caregiver_id`.
-4. **T19 — access-separation suite.** Much is already covered by `agencyFilter.test.ts`, `applicantFilter.test.ts`, and `vault.test.ts`; T19 should add documents (after T18) and gather the proof in one suite.
+- **Tasks added this session:** T62 (test-SSN hint on the SSN field, after T31), T63 (UAT guide for the whole demo, last), T64 (verify an item by hand; done). T44, T46, T56, T60, and T63 were reworded to match.
 
 ## 2. How we work
 
 ### Per-task workflow (from `docs/prompt-scratch/prompt-template`)
-1. Mike pastes the template with one task ID. Implement **exactly one task**.
+1. **Mike now just types the task ID** (for example "T32"); apply the full prompt template. Implement **exactly one task**.
 2. Before coding, read the task in tasks.md, its requirements in specification.md, its ADRs and tech stack in plan.md, and design-system.md, and confirm every dependency is Done.
-3. **Restate findings briefly (sections 1–5), then list decisions, each with a recommendation, and wait.** Mike usually answers "Recommendations are good". Ask whenever the documents don't settle something — Mike prefers questions to guesses.
+3. **Restate findings briefly (sections 1–5), then list decisions, each with a recommendation, and wait.** Mike usually answers "Go ahead" or "Recommendations are good". Ask whenever the documents don't settle something — Mike prefers questions to guesses. Flag gaps in the task list (e.g. the missing manual-verification path became T64).
 4. Build only what the task says; note other issues without fixing them. Don't add libraries, styles, or patterns that aren't established.
 5. Verify with `npx vue-tsc --noEmit`, `npm test`, and `npm run build` in `/app`.
-6. Report in three parts: (1) changes, as a table of files; (2) a short plain-language explanation; (3) the acceptance criteria and exactly how to verify.
-7. Leave the task's status unchanged. **Only after Mike confirms** ("Completed", "Confirmed done"), set it to Done in tasks.md and add a row to `docs/manual-checks.md` (Task | Date | Checked by: Mike Broniek | Steps | Result: Pass | Notes).
+6. Report in three parts: (1) changes; (2) a short plain-language explanation; (3) the acceptance criteria and exactly how to verify (screen tasks: numbered manual-check steps at phone width).
+7. Leave the task's status unchanged. **Only after Mike confirms** ("Completed", "Confirmed", "Complete"), set it to Done in tasks.md and add a row to `docs/manual-checks.md` (Task | Date | Checked by: Mike Broniek | Steps | Result: Pass | Notes).
 
 ### Mike's preferences
 - Show expected changes before large document edits, and ask before rewriting design docs.
-- Plain language; recommendations over surveys of options.
+- Plain language; recommendations with the reason for each, not surveys of options.
 - Demo-friendly touches are welcome (demo account hints, readable outbox) but get proposed first.
 - Mike keeps his own log in `docs/prompt-scratch/learned.md`; don't edit it.
 
 ### Environment
 - Windows 11, VS Code extension, Git Bash + PowerShell, Node 24.
 - `gh` CLI, Ruby, and Python are **not installed**; Docker is. Repo settings (Pages, security) have to be changed by Mike on github.com.
-- Claude in Chrome tools were **not available** in this session; UI checks are Mike's manual checks.
-- **Stop `npm run dev` before `npm ci`** — on Windows the dev server locks a rolldown binary and `npm ci` fails half-way, leaving `node_modules` gutted (re-run `npm ci` afterwards).
-- Bash heredocs choke on apostrophes in long inline scripts; write scripts to the scratchpad with the Write tool and run them with `node`.
+- Claude in Chrome tools were **not available**; UI checks are Mike's manual checks.
+- **Stop `npm run dev` before `npm ci`** — on Windows the dev server locks a rolldown binary and `npm ci` fails half-way.
+- Bash heredocs choke on apostrophes and `\s`-style escapes in long inline scripts; write scripts to the scratchpad with the Write tool and run them with `node`.
 
 ## 3. Decisions made this session
 
 ### Scope, stack, and hosting
 - **Front end only, no external systems at runtime** (Spec D1, ADR-00). A mock data layer runs in the browser, seeded from CSV (ADR-21). Supabase is only the intended pilot backend.
-- **Stack:** Vue 3, Vue Router **v4** (pinned — npm had installed v5), Vite 8, TypeScript **~5.9** (pinned — TypeScript 7 breaks vue-tsc), Bootstrap 5 (chosen over Tailwind to match the design system and template), Bootstrap Icons and Roboto (`@fontsource/roboto` 400/500/700) bundled from npm, PapaParse, Vitest 5.
-- **Testing (ADR-17):** Vitest for logic; screens get **manual checks** at phone size in Chrome DevTools device mode, logged in `docs/manual-checks.md`. Playwright was removed from plan and tasks. Mike briefly asked to remove Vitest too, then reversed that.
+- **Stack:** Vue 3, Vue Router **v4** (pinned), Vite 8, TypeScript **~5.9** (pinned — TypeScript 7 breaks vue-tsc), Bootstrap 5, Bootstrap Icons and Roboto bundled from npm, PapaParse, Vitest 5.
+- **Testing (ADR-17):** Vitest for logic; screens get **manual checks** at phone size in Chrome DevTools device mode, logged in `docs/manual-checks.md`.
 - **TypeScript target is ES2020:** avoid `Array.at()` and other ES2022 methods (use `slice(-1)[0]`).
-- **Hosting (T4):** `.github/workflows/deploy.yml` runs `npm ci`, `npm test`, `npm run build` in `/app` on Node 24, builds the docs with `actions/jekyll-build-pages` into `app/dist/docs`, and deploys to Pages. Vite `base` is `/mbroniek-IUSB-System-Design-M1/` for builds only (dev stays at `/`). Pages Source is "GitHub Actions"; secret scanning and push protection are on.
-- **Docs site (T61, added this session):** `docs/_config.yml` (Primer theme, `baseurl: /mbroniek-IUSB-System-Design-M1/docs`, excludes `prompt-scratch`) and `docs/index.md` (links to each design doc and the manual checks log).
+- **Hosting (T4, T61):** `.github/workflows/deploy.yml` runs `npm ci`, `npm test`, `npm run build` in `/app`, builds the docs with `actions/jekyll-build-pages` into `app/dist/docs`, and deploys to Pages. Vite `base` is `/mbroniek-IUSB-System-Design-M1/` for builds only.
 
-### Design documents changed this session
-- **design-system.md:** Mike wrote it with Claude's help (brand principles, palette, Roboto sizes, logo usage, components, voice & tone). Typo "abovie" fixed. The palette table still says Primary `#f2545b` is for primary buttons, while Core Components uses `#a93f55` — intentionally left; `#a93f55` is what's built.
-- **specification.md:** Section 6 gained Branding and WCAG 2.1 AA items and 3G targets; D1, D5, D6 rewritten for the front-end-only demo.
-- **plan.md:** Tech stack rewritten for the browser data layer; ADRs 00, 00a, 05, 06, 08, 10, 11, 13, 14, 15, 17 revised; **ADR-20** (design system through one Bootstrap theme) and **ADR-21** (single data-layer interface, CSV seed, relative dates) added; risks and sequencing updated. The approval table still shows 2026-09-22 — the plan changed after sign-off and may need re-approval.
-- **tasks.md:** tasks reworded for the data layer; **T57** (theme), **T58** (caregiver seed), **T59** (reset), **T60** (demo date), **T61** (docs site) added; T29 dropped; screen tasks use manual checks; Definition of Done requires a passing Vitest test or a logged manual check, shared design-system components, voice & tone, and no outside network requests.
+### Design documents
+- **design-system.md:** palette table still says `#f2545b` for primary buttons while Core Components uses `#a93f55` — intentionally left; `#a93f55` is what's built.
+- **plan.md:** ADR-20 (design system) and ADR-21 (data layer) added earlier; settings list now includes "Mock state registry available: true (R26)". The approval table still shows 2026-09-22.
+- **tasks.md:** see section 1 for tasks added this session.
 
 ### Design system as built (`app/src/styles/theme.css`, preview at `#/components`)
-- Bootstrap CSS-variable overrides (no Sass). Bootstrap "primary" = **#a93f55** (white text 5.95:1; hover **#843142**); **#f2545b** only in the logo (white on it is 3.4:1, fails AA). Background #f3f7f0, text #19323c, H1 32px/700, H2 24px/500, body 16px/400.
-- Primary button = `.btn-primary`; secondary = `.btn-outline-primary` (hover tint #f2e2e6); card = `.card` (white, #dee2e6 border).
-- Shared components: `FormField.vue` (label above, asterisk and `required` when required, `v-model`) and `StatusBadge.vue` (icon + text, four tones: success — Verified/Eligible/Cleared; neutral — Pending/Ordered/intake and screening states; warning — Delayed/Expiring/Retryable/Manual Verification; danger — Expired/Not Current/Review Required; unknown statuses fall back to neutral).
-- One primary button per screen; error messages plain and warm.
-- Logo: `app/src/assets/carematchlogo.png` (1200×300, copied from `docs/design/`), shown at 160×40 in the navbar.
+- Bootstrap "primary" = **#a93f55** (hover **#843142**); **#f2545b** only in the logo. Background #f3f7f0, text #19323c, H1 32px/700, H2 24px/500.
+- Primary button = `.btn-primary`; secondary = `.btn-outline-primary`; card = `.card`.
+- **`FormField.vue`:** label above, asterisk when required, `v-model`. **T31 added optional props:** `autocomplete`, `inputmode` (phone keyboard), `help` (grey text under the field), `error` (Bootstrap `is-invalid` + `invalid-feedback`, linked by `aria-describedby`).
+- **`StatusBadge.vue`:** icon + text, four tones (success / neutral / warning / danger).
+- One primary button per screen; plain, warm wording; demo notices use the warning-subtle style.
 
 ### Data layer (`app/src/data/`)
 - **`dataLayer.ts` — `DataLayer` interface:**
-  - `list(table)`, `get(table, id)` — filtered by who is signed in (see access filter).
-  - `insert(table, row, actor)`, `update(table, id, changes, actor)` — every write needs an `Actor { role: 'coordinator' | 'applicant' | 'system', name }` and adds an audit event. System jobs use `{ role: 'system', name: 'CareMatch' }`.
-  - `storeSsn(caregiverId, ssn, actor)` — the only way to save an SSN.
-  - `putDocument(document, actor)`, `getDocument(id)`, `listDocuments()` — IndexedDB (not yet filtered — T18).
-  - `signIn(email, password)`, `requestSignInLink(email, next?)`, `signInWithLink(token)`, `signOut()`, `getSignedInUser()`.
-  - `loadSeed(getSeedFiles, today?)` — runs once (marker `carematch:seeded`), parses every CSV before writing any, resolves relative dates, gives id-less rows ids like `consents-1`, moves seed SSNs into the vault, and adds no audit events.
-- **Factories:** `createDataLayer(backend)` (filtered, for screens; provided to the app via `dataLayerKey`) and `createSystemDataLayer(backend)` (unfiltered, for jobs T24/T25 only). `createVendorVault(backend)` in `vault.ts` is for vendor adapters (T20) only. None of the jobs or adapters are wired into `main.ts` yet.
-- **Storage:** `storageBackend.ts` interface; `browserBackend.ts` uses localStorage key `carematch:<table>` per table and IndexedDB database `carematch` with store `documents`; `memoryBackend.ts` is for tests.
-- **Tables:** the 12 seed tables plus internal ones — `audit_events` (append only), `ssn_vault` (never readable through the data layer), `session` (one row, signed-in user id), `sign_in_links` (tokens; written directly so they never reach the audit log), `notifications` (outbox; starts empty).
-- **Audit log (T9):** events `Created`, `Updated` (details list `field: old → new`), `Document stored`, `SSN stored` (last four only), `Signed in`, `Signed out`; fields match the seed columns plus `table` and `record_id`. `insert`/`update` refuse `audit_events`; there is no delete.
-- **Vault (T13):** `storeSsn` accepts only `9xx-xx-xxxx`; tokens look like `tok_<uuid>`; `list`/`get` refuse `ssn_vault`; `insert`/`update` refuse `ssn_vault` and any `ssn` field on caregivers.
-- **Access filter (T16, T17):**
-  - Signed-in **coordinator:** only their agency's rows (agency from `id` for agencies, `agency_id`, the row's caregiver, or the user for sign-in audit events) plus shared tables (`settings`, `requirement_templates`, `template_items`). Rows with no agency (e.g. `sign_in_links`) are hidden.
-  - Signed-in **applicant:** only their caregiver record and rows with their `caregiver_id`, notifications addressed to them, their own user row and agency, and shared tables. `check_orders` and `audit_events` are always hidden from applicants.
-  - Writes follow the same rule ("You can only change records for your own agency." / "You can only change your own application.").
-  - **Signed out: unfiltered until T30** (see blocker resolutions).
-- **Lifecycle (`lifecycle.ts`, T10–T12):**
-  - `LIFECYCLE_TRANSITIONS` — 11 allowed moves: Intake In Progress→Intake Complete (applicant); Intake Complete→Screening In Progress (coordinator); Screening In Progress→Eligible (system); Screening/Eligible/Cleared/Not Current→Review Required (system); Eligible→Cleared and Not Current→Cleared (coordinator); Cleared→Not Current (system); Review Required→Screening In Progress (coordinator).
-  - `transitionCaregiver(dataLayer, id, toState, actor)` returns `{ ok: true, caregiver }` or `{ ok: false, reason }` (never throws; reasons are plain language for T45 to display). Updates `lifecycle_state` and `state_changed_at` through the audited `update`.
-  - `findBlockingItems()` gates both Eligible and Cleared: every template item must exist, be Verified or Expiring, and not be past its expiration date; reasons are "(missing)", "(expired)", "(not verified yet)".
-  - `checkEligibility(dataLayer, caregiverId)` moves Screening In Progress→Eligible as the system; call it after verifying an item (T21 vendor results, T44 document review).
-- **Types (`types.ts`):** `LIFECYCLE_STATES`, `ITEM_STATUSES`, `USER_ROLES`, `CONSENT_TYPES`, `CONSENT_DECISIONS`, `NOTIFICATION_CHANNELS` (each with a type and, for states and statuses, an `is…()` check), plus `Agency`, `User`, `Setting`, `Caregiver`, `RequirementTemplate`, `TemplateItem`, `RequiredItem`, `DocumentRecord`, `CheckOrder`, `Consent`, `Notification`, `Actor`, `AuditEvent`. Field names match stored columns; values are text.
-- **Dates (`relativeDates.ts`):** `resolveRelativeDate` (`today`, `today±N`, optional ` HH:MM`) and `formatLocalDateTime` (local `YYYY-MM-DDTHH:MM`).
+  - `list`, `get` — filtered by who is signed in. `insert`, `update` — need an `Actor { role, name }` and add an audit event. System jobs use `{ role: 'system', name: 'CareMatch' }`.
+  - `storeSsn(caregiverId, ssn, actor)` — the only way to save an SSN (900-series only).
+  - `putDocument` (requires `meta.caregiver_id`; sets `agency_id` itself), `getDocument`, `listDocuments` — filtered like tables (T18).
+  - Sign-in: `signIn`, `requestSignInLink` (ignores blank emails), `signInWithLink`, `signOut`, `getSignedInUser`.
+  - **Intake (T30):** `startIntake(agencySlug)` creates an Intake In Progress caregiver, a "New applicant" user, **one Pending required item per template item**, signs them in, and audits "Record created: Started intake from the … link". `agencyNameForIntake(slug)` names one agency only. `emailInUse(email, exceptUserId)` (T31).
+  - **Outbox lookup (T30):** `outboxFor(email)` — messages to that address, newest first; works signed out.
+  - **Demo date (T60):** `today()` (demo date at the current clock time, or real now), `getDemoDate()`, `setDemoDate(date | undefined)`. Stored as `carematch:demo_date`; Reset clears it. **Always use `dataLayer.today()`, never `new Date()`,** except seed loading.
+  - `loadSeed`, `resetDemoData` (T59: fetches seed first, then clears everything incl. documents, session, demo date).
+- **Factories:** `createDataLayer(backend)` (filtered, for screens) and `createSystemDataLayer(backend)` (unfiltered, for jobs and vendor results). `createVendorVault(backend)` is for vendor adapters only.
+- **Access filter:**
+  - Coordinator: own agency's rows plus shared tables (`settings`, `requirement_templates`, `template_items`).
+  - Applicant: own caregiver record and its rows, messages to them, own user and agency, shared tables. `check_orders` and `audit_events` hidden.
+  - **Signed out (T30): only the shared tables; documents none; every write refused** ("Please sign in before making changes."). Signed-out pages use narrow functions (`startIntake`, `outboxFor`, `agencyNameForIntake`).
+  - Tests that need the whole seed use `createSystemDataLayer`, and get sign-in tokens from `outboxFor('maria.gonzalez@example.com')`.
+- **Lifecycle (`lifecycle.ts`):** 11 allowed transitions; `transitionCaregiver` returns `{ ok, caregiver } | { ok: false, reason }`; `findBlockingItems` gates Eligible and Cleared; `checkEligibility` moves Screening In Progress→Eligible as the system.
+- **Vendors (`vendors.ts`, T20/T22/T23):** shared `VendorAdapter.order({ caregiver_id, ssn_token })` → `VendorResult { outcome: clear | match | failure | unavailable, label, vendor, reference, detail }`. Mocks: `createMockBackgroundCheck`, `createMockExclusionCheck(…, 'OIG' | 'SAM')`, `createMockRegistryCheck(…, isAvailable)`. SSN endings: 0001/other Clear, 0002 match (exclusion only), 0003 never returns, 0004 failure. Registry clear label is "Active".
+- **Checks (`checks.ts`):**
+  - `createBackgroundCheckVendor`, `createExclusionCheckVendor(backend, list)`, `createRegistryCheckVendor(backend)` read the delay (`mock_vendor_delay_seconds`) and `state_registry_available` from settings.
+  - `orderCheck(dataLayer, systemDataLayer, vendor, itemId, actor)` — only Pending/Retryable items; sets Ordered, adds a `check_orders` row per attempt; the result is recorded later as CareMatch via the system layer: clear → Verified (1-year expiration, except registry keeps the certificate's date) + `checkEligibility`; failure → Retryable; match → Manual Verification + Review Required; unavailable → Manual Verification. Coordinators are emailed each result.
+  - `verifyManually(dataLayer, itemId, { note, expirationDate }, actor)` (T64) — coordinator only, Manual Verification items only; sets Verified, method "Manual verification", evidence = note, future expiration required; then `checkEligibility`.
+- **Jobs (`jobs.ts`):** `runDelayedCheckJob(systemDataLayer, today)` (Ordered ↔ Delayed after 3 business days, weekdays only, reversible) and `runExpirationJob(systemDataLayer, today)` (Verified ↔ Expiring ↔ Expired, 30-day window, expiration day still valid; forward moves email the caregiver and coordinators; then any Cleared record with an Expired item → Not Current with a coordinator email; never restores Cleared). Both run in `main.ts` after the seed loads, with `systemDataLayer.today()`.
+- **Notifications (`notifications.ts`, T27/T28):** `sendEmail` and `sendSms` (blank subject) are the only writers to the outbox; `coordinatorsOf(systemDataLayer, agencyId)`. Nothing is sent.
+- **Intake (`intake.ts`, T31):** `saveIdentityStep(dataLayer, fields, actor)` validates all fields first (plain-language errors keyed by field), updates the caregiver, stores the SSN via `storeSsn`, and renames the applicant user and sets its email. `normalizeSsn` accepts digits with or without dashes.
 
 ### Screens and routes (`app/src/router/index.ts`, guards in `main.ts`)
 
 | Route | Component | Notes |
 |---|---|---|
-| `#/` | `LandingPageComponent` | Empty home page |
+| `#/` | `LandingPageComponent` | Home; shows "Demo data is back to its starting point." after a reset |
 | `#/components` | `ComponentsPageComponent` | Design-system preview (not linked) |
-| `#/sign-in` | `SignInPageComponent` | Coordinator email + password; lists demo accounts; links to applicant sign-in |
-| `#/dashboard` | `DashboardPageComponent` | Placeholder "Signed in as … · agency" + Sign out; coordinator only |
-| `#/applicant/sign-in` | `ApplicantSignInPageComponent` | Request magic link; same message whether or not the email exists; "Open demo outbox" |
-| `#/outbox?to=email` | `OutboxPageComponent` | Minimal demo outbox; hides the raw link and shows an "Open sign-in link" button |
-| `#/auth?token=…&next=…` | `AuthPageComponent` | Follows the magic link, then goes to `next` |
-| `#/applicant` | `ApplicantHomePageComponent` | Placeholder "Signed in as …" + Sign out; applicant only (redirects to sign-in with `next`) |
+| `#/sign-in` | `SignInPageComponent` | Coordinator email + password; lists demo accounts |
+| `#/dashboard` | `DashboardPageComponent` | Placeholder; coordinator only |
+| `#/applicant/sign-in` | `ApplicantSignInPageComponent` | Request magic link; "Open demo outbox" |
+| `#/outbox?to=email` | `OutboxPageComponent` | Demo inbox via `outboxFor`; emails only; link shown as a button |
+| `#/auth?token=…&next=…` | `AuthPageComponent` | Follows the magic link |
+| `#/applicant` | `ApplicantHomePageComponent` | Placeholder; applicant only |
+| `#/apply/:agencySlug` | `IntakeStartPageComponent` | "Apply to {agency}" + "Start my application"; unknown slug → not-found message, no agency named |
+| `#/applicant/intake/identity` | `IdentityStepPageComponent` | "About you" step (T31); saves then goes to `#/applicant` until T32 exists |
 
-- The signed-in user is shared through `sessionKey` in `app/src/session.ts` (a Vue `ref`); pages set it on sign-in and clear it on sign-out.
-- The navbar shows only the logo (link home). Later tasks add their own links.
+- **Navbar:** logo; **Demo date** field (today to 2 years out; changing it reloads the page so both jobs re-run), **Back to today** (only while set), **Reset demo data** with inline confirmation, and a "Demo date active" notice.
+- The signed-in user is shared through `sessionKey` (`app/src/session.ts`); pages set it on sign-in, intake start, and identity save.
 
-### Seed data (`app/public/seed/`, see its README for the full cast)
-- 12 CSVs: agencies (Hoosier Home Care `agency-a`, Riverbend Caregivers `agency-b`), users, settings, requirement_templates (Indiana HHA, marked sample), template_items (8 items with applicant reasons), caregivers (13; cg-01–cg-10 Hoosier covering all 7 states, cg-11–cg-13 Riverbend), required_items (104, ids like `ri-cg-01-photo_id`), documents (53 metadata rows, no image files), check_orders (36, including open, failed, registry-unavailable, and possible-match cases), consents (24, one declined), replacement_requests (1, Robert King), audit_events (62).
-- Dates are relative (`today+20`, `today-3 10:05`), resolved on first load.
-- Settings: `warning_window_days` 30, `delayed_threshold_business_days` 3, `resume_window_days` 7, `mock_vendor_delay_seconds` 10.
-- Test SSN endings (ADR-12): 0001 Clear, 0002 exclusion match, 0003 never returns, 0004 vendor failure.
-- **Demo accounts:** coordinators `dana.whitfield@hoosierhomecare.example` and `marcus.lee@riverbendcaregivers.example`, password `demo1234`. Applicants `firstname.lastname@example.com` (e.g. `maria.gonzalez@example.com`) sign in by magic link.
-- Key scenario caregivers: Linda Brooks cg-05 (Eligible), Robert King cg-06 (Cleared, CPR expiring, replacement requested), Grace Kim cg-07 (Cleared, clean), Samuel Okafor cg-08 (Not Current, TB expired), Olivia Martin cg-09 (Review Required, 0002), Aisha Patel cg-03 (delayed 0003), Tom Nguyen cg-04 (vendor failure 0004 + registry manual verification), Ethan Walker cg-10 (declined authorization), Hannah Schultz cg-11 (checks just ordered).
+### Seed data (`app/public/seed/`, see its README)
+- 12 CSVs; agencies Hoosier Home Care (`agency-a`, slug `hoosier-home-care`) and Riverbend Caregivers (`agency-b`, slug `riverbend-caregivers`); 13 caregivers; dates relative to today.
+- Settings (5): `warning_window_days` 30, `delayed_threshold_business_days` 3, `resume_window_days` 7, `mock_vendor_delay_seconds` 10, `state_registry_available` true.
+- **Demo accounts:** coordinators `dana.whitfield@hoosierhomecare.example` and `marcus.lee@riverbendcaregivers.example`, password `demo1234`. Applicants `firstname.lastname@example.com` sign in by magic link.
+- Key caregivers: Linda Brooks cg-05 (Eligible), Robert King cg-06 (Cleared, CPR expiring in 20 days), Grace Kim cg-07 (Cleared, clean), Samuel Okafor cg-08 (Not Current, TB expired), Olivia Martin cg-09 (Review Required, 0002), Aisha Patel cg-03 (Delayed, 0003), Tom Nguyen cg-04 (0004 Retryable + registry Manual Verification), Ethan Walker cg-10 (declined authorization), Hannah Schultz cg-11 (checks just ordered), James Carter cg-02 (Intake Complete, Pending checks).
 
 ### Test conventions
-- Tests live next to the code as `*.test.ts` and use `createMemoryBackend()`.
-- Load real seed files with Vite `?raw` imports (e.g. `import caregiversCsv from '../../public/seed/caregivers.csv?raw'`) or the `import.meta.glob` pattern for all of them.
-- Edit a copy of the seed text to create a case (e.g. `requiredItemsCsv.replace(...)` or dropping a row) rather than adding fixture files.
-- Use `vi.useFakeTimers()` / `vi.setSystemTime()` for time-based cases (see `signInLinks.test.ts`).
-
-### Blocker resolutions (all recorded in tasks.md)
-- **Signed-out access (T30, T49):** signed-out reads will return only the shared tables; `startIntake(agencySlug)` will create the record and sign the new applicant in; the demo outbox will switch to a purpose-built lookup by email. **Built in T30.**
-- **3G targets (T55):** on Chrome DevTools Slow 3G, each intake step loads in 5 seconds or less and a compressed photo upload saves in 10 seconds or less (also in Spec Section 6).
-- **T56 trace:** business case §7 and plan §6 step 7.
-- **Review Required exit (T10, T46):** coordinator only, back to Screening In Progress for a false match; a real match stays in Review Required.
-- Earlier: T29 keep-alive dropped; T38 Supabase link limit no longer applies; the old copilot instructions file was removed; replacing the template on Pages was confirmed.
+- Tests live next to the code as `*.test.ts`, use `createMemoryBackend()`, and load real seed files with the `import.meta.glob('../../public/seed/*.csv', …)` pattern.
+- Unfiltered reads: `createSystemDataLayer(backend)`. Applicant sign-in in tests: `requestSignInLink` then take the token from `outboxFor(email)[0].body`.
+- Time: `vi.useFakeTimers()` (mock vendors), fixed `Date` values passed to jobs (e.g. Monday 2026-10-05), `vi.useFakeTimers({ now })` for `today()`.
 
 ## 4. Things later tasks must remember
 
-- **Demo date (T60):** "today" is currently `new Date()` in several places — audit `occurred_at`, `state_changed_at` (lifecycle), expiration checks in `findBlockingItems`, sign-in link creation and expiry, and `loadSeed`'s default. T60's demo-date control needs one shared "today" source that all of these use, or moving the date won't change them.
-- **Notifications (T27):** T15 writes the sign-in email directly into `notifications` from `requestSignInLink`; T27's notification service should take that over.
-- **Vendor adapters (T20):** create the vendor vault from the same backend in `main.ts` and give it only to adapters; SSN outcome comes from the last four digits.
-- **Jobs (T24, T25, T26):** use `createSystemDataLayer` so they see every agency; act as the `system` actor; T26 uses `transitionCaregiver(..., 'Not Current', system)`.
-- **Item verification (T21, T44):** call `checkEligibility` after verifying an item.
-- **Clear screen (T45):** show the `reason` from `transitionCaregiver` as-is.
-- **Outbox (T49):** the current `#/outbox` is an unrestricted demo page; T49 builds the coordinator version limited to their agency.
-- **Seeded documents** have metadata but no image files — screens should show them as samples.
-- **Browser storage** (including the vault and audit log) can be edited in DevTools — accepted for the demo (ADR-10, ADR-11). `list('users')` exposes demo coordinator passwords to coordinator screens (fake data).
-- If the browser holds an older seed, clear site data once (DevTools > Application > Storage > Clear site data) and reload.
+- **Next step routing:** T31's identity page and T30's start page push to fixed routes; when T32 exists, the identity step should continue to it, and T38 needs a "last saved step" to resume to (not stored yet).
+- **T62:** add the info-icon test-SSN hint under the SSN field in `IdentityStepPageComponent` using FormField's `help` area pattern (tap, not hover).
+- **T33:** write the `documents` table row and the stored file (`putDocument`) with the same id; the applicant's 8 required items already exist from `startIntake`.
+- **T37:** submitting moves Intake In Progress → Intake Complete (applicant transition) and emails coordinators via `sendEmail` + `coordinatorsOf`.
+- **T43:** decide whether a Delayed check can be reordered (`orderCheck` accepts only Pending/Retryable today).
+- **T44 / T46:** call `verifyManually` for Manual Verification items; T46's false-match path also verifies the matched exclusion item.
+- **T45:** show the `reason` from `transitionCaregiver` as-is.
+- **T47:** replacement request can use `sendSms` and/or `sendEmail`.
+- **T49:** the coordinator outbox is limited to their agency and labels email vs SMS; SMS rows have a blank subject.
+- **Demo date:** a mock check waiting for its 10-second result is lost if the page reloads (including a demo-date change); the delayed job later marks it Delayed.
+- **Starting an intake** signs out whoever was signed in.
+- **Seeded documents** have metadata but no image files — show them as samples.
+- **Browser storage** can be edited in DevTools — accepted for the demo (ADR-10, ADR-11).
+- If the browser holds an older seed, use "Reset demo data" (or clear site data) and reload.
 
 ## 5. Open offers not yet taken
 - A root `CLAUDE.md` capturing section 2 so new sessions get the workflow automatically.
 - A demo-applicants hint on `#/applicant/sign-in`, like the coordinator page has.
-- Pinning newer GitHub Action versions in `deploy.yml` (currently checkout@v4, setup-node@v4, configure-pages@v5, jekyll-build-pages@v1, upload-pages-artifact@v3, deploy-pages@v4).
+- Pinning newer GitHub Action versions in `deploy.yml`.
+- Turning on Vitest's `fsModuleCache` to silence its speed tip.
