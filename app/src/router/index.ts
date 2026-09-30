@@ -10,6 +10,7 @@ import ApplicantHomePageComponent from '../components/ApplicantHomePageComponent
 import IntakeStartPageComponent from '../components/IntakeStartPageComponent.vue';
 import IdentityStepPageComponent from '../components/IdentityStepPageComponent.vue';
 import NeededStepPageComponent from '../components/NeededStepPageComponent.vue';
+import UploadsStepPageComponent from '../components/UploadsStepPageComponent.vue';
 
 const routes = [
   {
@@ -54,6 +55,11 @@ const routes = [
   {
     path: '/applicant/intake/needed',
     component: NeededStepPageComponent,
+    meta: { requiresApplicant: true },
+  },
+  {
+    path: '/applicant/intake/uploads',
+    component: UploadsStepPageComponent,
     meta: { requiresApplicant: true },
   },
   {

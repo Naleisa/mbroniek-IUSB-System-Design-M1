@@ -194,3 +194,105 @@ export function whatYoullNeed(dataLayer: DataLayer): WhatYoullNeed {
     check: items.filter((item) => item.requires_upload !== 'true').map(toNeeded),
   };
 }
+
+/** Accepted upload formats and the short name shown to applicants (ADR-15). */
+export const UPLOAD_TYPES: Record<string, string> = {
+  'image/jpeg': 'JPG',
+  'image/png': 'PNG',
+  'application/pdf': 'PDF',
+};
+
+/** Largest file an applicant can choose, checked before compression (ADR-15). */
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+
+/** Checks a chosen file's format and size before anything else happens. Returns a message, or '' if it's fine. */
+export function checkUploadFile(type: string, size: number): string {
+  if (!UPLOAD_TYPES[type]) {
+    return 'Choose a JPG, PNG, or PDF file.';
+  }
+  if (size > MAX_UPLOAD_BYTES) {
+    return `This file is ${(size / (1024 * 1024)).toFixed(1)} MB. Choose one that's 10 MB or smaller.`;
+  }
+  return '';
+}
+
+export interface UploadInput {
+  itemKey: string;
+  /** The file to store: compressed for photos, as chosen for PDFs. */
+  file: Blob;
+  fileName: string;
+  /** The chosen file's format and size, before compression. */
+  originalType: string;
+  originalSize: number;
+  expirationDate: string;
+}
+
+export type UploadErrors = { file?: string; expiration_date?: string };
+
+export type UploadResult = { ok: true; documentId: string } | { ok: false; errors: UploadErrors };
+
+/**
+ * Saves one document for the signed-in applicant (R11, ADR-15). Checks the format, the
+ * 10 MB limit, and that an expiration date is given, then stores the file and a
+ * `documents` row with the same id, and keeps the required item Pending with the
+ * document's expiration date. Only items the template asks the applicant to upload,
+ * and only while they're Pending, can take a document.
+ */
+export async function uploadDocument(dataLayer: DataLayer, input: UploadInput, actor: Actor): Promise<UploadResult> {
+  const user = dataLayer.getSignedInUser();
+  const caregiver = user?.caregiver_id ? dataLayer.get('caregivers', user.caregiver_id) : undefined;
+  if (!user || !caregiver) {
+    throw new Error('Please sign in to continue your application.');
+  }
+  const item = dataLayer
+    .list('required_items')
+    .find((row) => row.caregiver_id === caregiver.id && row.item_key === input.itemKey);
+  const templateItem = dataLayer
+    .list('template_items')
+    .find((row) => row.template_id === caregiver.template_id && row.item_key === input.itemKey);
+  if (!item || !templateItem) {
+    return { ok: false, errors: { file: "We couldn't find that item on your application." } };
+  }
+  if (templateItem.requires_upload !== 'true') {
+    return { ok: false, errors: { file: "This item doesn't need an upload. We check it for you." } };
+  }
+  if (item.status !== 'Pending') {
+    return { ok: false, errors: { file: `This document is already ${item.status}, so it can't be changed here.` } };
+  }
+
+  const errors: UploadErrors = {};
+  const fileError = checkUploadFile(input.originalType, input.originalSize);
+  if (fileError) {
+    errors.file = fileError;
+  }
+  const expirationDate = input.expirationDate.trim();
+  if (!expirationDate) {
+    errors.expiration_date = 'Enter the expiration date shown on the document.';
+  } else if (!DATE_ONLY.test(expirationDate)) {
+    errors.expiration_date = 'Enter a real expiration date.';
+  }
+  if (Object.keys(errors).length > 0) {
+    return { ok: false, errors };
+  }
+
+  const documentId = `doc-${crypto.randomUUID()}`;
+  const fileType = input.file.type || input.originalType;
+  const meta = {
+    caregiver_id: caregiver.id,
+    item_key: input.itemKey,
+    file_name: input.fileName,
+    file_type: fileType,
+    expiration_date: expirationDate,
+    uploaded_at: formatLocalDateTime(dataLayer.today()),
+  };
+  // The file first, so a failed save never leaves a documents row without its file.
+  await dataLayer.putDocument({ id: documentId, file: input.file, meta }, actor);
+  dataLayer.insert('documents', { id: documentId, agency_id: caregiver.agency_id, ...meta }, actor);
+  dataLayer.update(
+    'required_items',
+    item.id,
+    { status: 'Pending', expiration_date: expirationDate, evidence: `Uploaded ${input.fileName}` },
+    actor,
+  );
+  return { ok: true, documentId };
+}

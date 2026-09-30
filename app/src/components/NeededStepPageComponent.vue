@@ -40,8 +40,7 @@ const needed = whatYoullNeed(dataLayer);
               </li>
             </ul>
 
-            <!-- The upload step (T33) comes next; until then Continue goes to the applicant's home page. -->
-            <router-link to="/applicant" class="btn btn-primary w-100">Continue</router-link>
+            <router-link to="/applicant/intake/uploads" class="btn btn-primary w-100">Continue</router-link>
             <router-link to="/applicant/intake/identity" class="btn btn-outline-primary w-100 mt-2">Back</router-link>
           </div>
         </div>
