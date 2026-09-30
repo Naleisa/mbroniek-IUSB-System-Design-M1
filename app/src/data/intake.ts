@@ -37,13 +37,13 @@ export const PHONE_DIGITS = 10;
 export const SSN_DIGITS = 9;
 
 /**
- * Formats a phone number as it's typed: `(574`, `(574) 555`, `(574) 555-0142`. Keeps
- * at most 10 digits and drops a leading country code 1 (US area codes never start with 1),
- * so the shape is always clear.
+ * Formats a phone number as it's typed: `(574`, `(574) 555`, `(574) 555-0142`. Every
+ * typed digit is kept, up to 10. A pasted or autofilled 11-digit number starting with the
+ * country code 1 (such as `+1 574 555 0142`) drops that 1.
  */
 export function formatPhoneInput(value: string): string {
   let digits = value.replace(/\D/g, '');
-  if (digits.startsWith('1')) {
+  if (digits.length === 11 && digits.startsWith('1')) {
     digits = digits.slice(1);
   }
   digits = digits.slice(0, PHONE_DIGITS);
@@ -154,4 +154,43 @@ export function saveIdentityStep(dataLayer: DataLayer, fields: IdentityFields, a
     actor,
   );
   return { ok: true };
+}
+
+export interface NeededItem {
+  item_key: string;
+  name: string;
+  reason: string;
+}
+
+export interface WhatYoullNeed {
+  /** Items the applicant uploads a photo of. */
+  upload: NeededItem[];
+  /** Items checked for the applicant (background, exclusion lists). */
+  check: NeededItem[];
+}
+
+/**
+ * The "what you'll need and why" list for the signed-in applicant (R18, ADR-03): their
+ * template's items in template order, each with its plain-language reason, split by
+ * whether the applicant uploads it. Read from the template, so editing the seed changes it.
+ */
+export function whatYoullNeed(dataLayer: DataLayer): WhatYoullNeed {
+  const caregiverId = dataLayer.getSignedInUser()?.caregiver_id;
+  const caregiver = caregiverId ? dataLayer.get('caregivers', caregiverId) : undefined;
+  if (!caregiver) {
+    return { upload: [], check: [] };
+  }
+  const items = dataLayer
+    .list('template_items')
+    .filter((item) => item.template_id === caregiver.template_id)
+    .sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
+  const toNeeded = (item: (typeof items)[number]): NeededItem => ({
+    item_key: item.item_key,
+    name: item.name,
+    reason: item.reason,
+  });
+  return {
+    upload: items.filter((item) => item.requires_upload === 'true').map(toNeeded),
+    check: items.filter((item) => item.requires_upload !== 'true').map(toNeeded),
+  };
 }

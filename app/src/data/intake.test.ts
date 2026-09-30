@@ -144,8 +144,14 @@ describe('formatting phone and SSN as they are typed', () => {
   it('reformats pasted or messy phone numbers, drops a leading 1, and stops at 10 digits', () => {
     expect(formatPhoneInput('574.555.0142')).toBe('(574) 555-0142');
     expect(formatPhoneInput('+1 574 555 0142')).toBe('(574) 555-0142');
-    expect(formatPhoneInput('1')).toBe('');
     expect(formatPhoneInput('15745550142')).toBe('(574) 555-0142');
+  });
+
+  it('keeps every typed digit, including a first digit of 1', () => {
+    expect(formatPhoneInput('1')).toBe('(1');
+    expect(formatPhoneInput('12')).toBe('(12');
+    expect(formatPhoneInput('1234567890')).toBe('(123) 456-7890');
+    expect(formatPhoneInput('0')).toBe('(0');
     expect(formatPhoneInput('(574) 555-01429')).toBe('(574) 555-0142');
     expect(formatPhoneInput('(574) 555-0142')).toBe('(574) 555-0142');
   });

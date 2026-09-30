@@ -9,6 +9,7 @@ import AuthPageComponent from '../components/AuthPageComponent.vue';
 import ApplicantHomePageComponent from '../components/ApplicantHomePageComponent.vue';
 import IntakeStartPageComponent from '../components/IntakeStartPageComponent.vue';
 import IdentityStepPageComponent from '../components/IdentityStepPageComponent.vue';
+import NeededStepPageComponent from '../components/NeededStepPageComponent.vue';
 
 const routes = [
   {
@@ -48,6 +49,11 @@ const routes = [
   {
     path: '/applicant/intake/identity',
     component: IdentityStepPageComponent,
+    meta: { requiresApplicant: true },
+  },
+  {
+    path: '/applicant/intake/needed',
+    component: NeededStepPageComponent,
     meta: { requiresApplicant: true },
   },
   {

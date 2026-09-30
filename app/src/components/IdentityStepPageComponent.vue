@@ -73,8 +73,7 @@ function saveAndContinue() {
   }
   errors.value = {};
   session.value = dataLayer.getSignedInUser();
-  // The "what you'll need" step comes next in T32; until then the applicant lands on their home page.
-  router.push('/applicant');
+  router.push('/applicant/intake/needed');
 }
 </script>
 

@@ -35,3 +35,5 @@ T29 was dropped as we're not introducing supabase during the demo.
 T31 cleared up how we'll hide SSNs during application filling
 
 T31 after testing realized we need cleanup of text while filling phone numbers
+
+T32 discovered an issue with typing phone numbers
