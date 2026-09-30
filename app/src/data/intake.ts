@@ -541,6 +541,8 @@ export interface StatusItem {
   waitingOn: string;
   /** False once the item is done (Verified). */
   outstanding: boolean;
+  /** An open replacement request for this item, if the agency asked for one (T40). */
+  replacement?: { status: string; due_date: string; submitted_at: string };
 }
 
 export interface ApplicantStatus {
@@ -549,6 +551,8 @@ export interface ApplicantStatus {
   /** The overall status in plain words for the applicant. */
   summary: string;
   items: StatusItem[];
+  /** Items the agency asked the applicant to replace that haven't been uploaded yet (T40). */
+  replacementsNeeded: { item_key: string; name: string; due_date: string }[];
 }
 
 /** Whole days from a `YYYY-MM-DD…` date to today, counting calendar days. */
@@ -598,6 +602,9 @@ export function applicantStatus(dataLayer: DataLayer): ApplicantStatus | undefin
     .sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
   const requiredItems = dataLayer.list('required_items').filter((item) => item.caregiver_id === caregiver.id);
   const documents = dataLayer.list('documents').filter((document) => document.caregiver_id === caregiver.id);
+  const replacements = dataLayer
+    .list('replacement_requests')
+    .filter((request) => request.caregiver_id === caregiver.id && OPEN_REPLACEMENT_STATUSES.includes(request.status));
 
   const items: StatusItem[] = [];
   for (const templateItem of templateItems) {
@@ -641,12 +648,22 @@ export function applicantStatus(dataLayer: DataLayer): ApplicantStatus | undefin
       default:
         waitingOn = '';
     }
+    // A replacement the agency asked for: due by a date, then Pending review once uploaded (T40).
+    const request = replacements.find((row) => row.item_key === item.item_key);
+    if (request?.status === 'Requested') {
+      waitingOn = `${waitingOn} Replacement due by ${request.due_date}.`.trim();
+    } else if (request?.status === 'Submitted') {
+      waitingOn = `Replacement uploaded on ${request.submitted_at.slice(0, 10)}. Waiting on ${agencyName} to review it.`;
+    }
     items.push({
       item_key: item.item_key,
       name: templateItem.name,
       status: item.status,
       waitingOn,
-      outstanding: item.status !== 'Verified',
+      outstanding: item.status !== 'Verified' || Boolean(request),
+      replacement: request
+        ? { status: request.status, due_date: request.due_date, submitted_at: request.submitted_at ?? '' }
+        : undefined,
     });
   }
 
@@ -655,5 +672,87 @@ export function applicantStatus(dataLayer: DataLayer): ApplicantStatus | undefin
     lifecycleState: caregiver.lifecycle_state,
     summary: summaries[caregiver.lifecycle_state] ?? '',
     items,
+    replacementsNeeded: items
+      .filter((entry) => entry.replacement?.status === 'Requested')
+      .map((entry) => ({ item_key: entry.item_key, name: entry.name, due_date: entry.replacement!.due_date })),
   };
+}
+
+/** Replacement requests still being worked on: asked for, or uploaded and waiting on review (T40, T48). */
+const OPEN_REPLACEMENT_STATUSES = ['Requested', 'Submitted'];
+
+export interface ReplacementInput {
+  itemKey: string;
+  file: Blob;
+  fileName: string;
+  originalType: string;
+  originalSize: number;
+  expirationDate: string;
+}
+
+/**
+ * Saves a replacement the agency asked for (R11, R15, C6, Scenario 3). The file and a
+ * `documents` row are stored with the same id, and the request moves to Submitted. The
+ * item itself stays as it is (still current, with its old date) until the coordinator
+ * verifies the replacement (T48), so the expiration job keeps watching the old one.
+ */
+export async function uploadReplacement(
+  dataLayer: DataLayer,
+  input: ReplacementInput,
+  actor: Actor,
+): Promise<UploadResult> {
+  const caregiverId = dataLayer.getSignedInUser()?.caregiver_id;
+  const caregiver = caregiverId ? dataLayer.get('caregivers', caregiverId) : undefined;
+  if (!caregiver) {
+    throw new Error('Please sign in to continue your application.');
+  }
+  const requests = dataLayer
+    .list('replacement_requests')
+    .filter((row) => row.caregiver_id === caregiver.id && row.item_key === input.itemKey);
+  if (requests.some((row) => row.status === 'Submitted')) {
+    return { ok: false, errors: { file: 'You already uploaded a replacement. It is waiting to be reviewed.' } };
+  }
+  const request = requests.find((row) => row.status === 'Requested');
+  const item = dataLayer
+    .list('required_items')
+    .find((row) => row.caregiver_id === caregiver.id && row.item_key === input.itemKey);
+  if (!request || !item) {
+    return { ok: false, errors: { file: "There's no replacement request for this item." } };
+  }
+
+  const errors: UploadErrors = {};
+  const fileError = checkUploadFile(input.originalType, input.originalSize);
+  if (fileError) {
+    errors.file = fileError;
+  }
+  const expirationDate = input.expirationDate.trim();
+  const dateError = checkExpirationDate(expirationDate, formatLocalDateTime(dataLayer.today()).slice(0, 10));
+  if (dateError) {
+    errors.expiration_date = dateError;
+  } else if (item.expiration_date && expirationDate <= item.expiration_date) {
+    errors.expiration_date = `A replacement should expire after your current one (${item.expiration_date}).`;
+  }
+  if (Object.keys(errors).length > 0) {
+    return { ok: false, errors };
+  }
+
+  const documentId = `doc-${crypto.randomUUID()}`;
+  const submittedAt = formatLocalDateTime(dataLayer.today());
+  const meta = {
+    caregiver_id: caregiver.id,
+    item_key: input.itemKey,
+    file_name: input.fileName,
+    file_type: input.file.type || input.originalType,
+    expiration_date: expirationDate,
+    uploaded_at: submittedAt,
+  };
+  await dataLayer.putDocument({ id: documentId, file: input.file, meta }, actor);
+  dataLayer.insert('documents', { id: documentId, agency_id: caregiver.agency_id, ...meta }, actor);
+  dataLayer.update(
+    'replacement_requests',
+    request.id,
+    { status: 'Submitted', document_id: documentId, submitted_at: submittedAt },
+    actor,
+  );
+  return { ok: true, documentId };
 }

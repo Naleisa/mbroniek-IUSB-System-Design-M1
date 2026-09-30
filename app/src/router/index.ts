@@ -13,6 +13,7 @@ import NeededStepPageComponent from '../components/NeededStepPageComponent.vue';
 import UploadsStepPageComponent from '../components/UploadsStepPageComponent.vue';
 import ConsentStepPageComponent from '../components/ConsentStepPageComponent.vue';
 import ReviewStepPageComponent from '../components/ReviewStepPageComponent.vue';
+import ReplacementPageComponent from '../components/ReplacementPageComponent.vue';
 
 const routes = [
   {
@@ -83,6 +84,11 @@ const routes = [
     // Never shown: the guard in main.ts sends the applicant on to their next unfinished step.
     path: '/applicant/resume',
     component: ApplicantHomePageComponent,
+    meta: { requiresApplicant: true },
+  },
+  {
+    path: '/applicant/replacements/:itemKey',
+    component: ReplacementPageComponent,
     meta: { requiresApplicant: true },
   },
   {

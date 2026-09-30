@@ -58,6 +58,26 @@ function signOut() {
             </div>
           </div>
 
+          <!-- A replacement the agency asked for (T40, Scenario 3 step 4): the item and the date it's due. -->
+          <div v-for="needed in status.replacementsNeeded" :key="needed.item_key" class="card mb-3 border-warning">
+            <div class="card-body">
+              <h2 class="h5">
+                <i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Replacement needed
+              </h2>
+              <p>
+                {{ status.agencyName }} needs a new <strong>{{ needed.name }}</strong> by
+                <strong>{{ needed.due_date }}</strong>.
+              </p>
+              <router-link
+                :to="`/applicant/replacements/${needed.item_key}`"
+                class="btn w-100"
+                :class="status.lifecycleState === 'Intake In Progress' ? 'btn-outline-primary' : 'btn-primary'"
+              >
+                Upload replacement
+              </router-link>
+            </div>
+          </div>
+
           <h2 class="h5">Still in progress</h2>
           <p v-if="outstanding.length === 0">Nothing is waiting on you or your agency right now.</p>
           <div v-for="item in outstanding" :key="item.item_key" class="card mb-2">
@@ -67,6 +87,10 @@ function signOut() {
                 <StatusBadge :status="item.status" />
               </div>
               <div class="small mt-1">{{ item.waitingOn }}</div>
+              <div v-if="item.replacement?.status === 'Submitted'" class="d-flex align-items-center gap-2 mt-2">
+                <span class="small">Replacement:</span>
+                <StatusBadge status="Pending" />
+              </div>
             </div>
           </div>
 

@@ -79,7 +79,8 @@ describe('applicant status page (R6, R18, R16)', () => {
 
     expect(status.summary).toBe("You're cleared to work with Hoosier Home Care.");
     expect(item(status, 'cpr_first_aid')?.waitingOn).toMatch(
-      /^Expires on \d{4}-\d{2}-\d{2}\. You'll be asked for a replacement\.$/,
+      // Robert also has a seeded replacement request (T40), so its due date follows.
+      /^Expires on \d{4}-\d{2}-\d{2}\. You'll be asked for a replacement\. Replacement due by \d{4}-\d{2}-\d{2}\.$/,
     );
   });
 
