@@ -11,6 +11,7 @@ import {
   type IdentityErrors,
   type IdentityFields,
 } from '../data/intake';
+import { TEST_SSN_OUTCOMES } from '../data/vendors';
 import { sessionKey } from '../session';
 import FormField from './FormField.vue';
 
@@ -35,6 +36,9 @@ const fields = reactive<IdentityFields>({
   ssn: '',
 });
 const errors = ref<IdentityErrors>({});
+
+// Demo hint (T62): the reserved test SSN endings, shown and hidden by tap, not hover.
+const showTestSsns = ref(false);
 
 // Phone and SSN take their shape as they're typed, so the expected format is obvious.
 watch(
@@ -142,6 +146,29 @@ function saveAndContinue() {
                 :help="ssnOnFile ? `SSN on file ending in ${ssnOnFile}. Leave this blank to keep it.` : ''"
                 :error="errors.ssn"
               />
+              <div class="mb-3">
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm px-0 text-decoration-none"
+                  :aria-expanded="showTestSsns"
+                  aria-controls="test-ssns"
+                  @click="showTestSsns = !showTestSsns"
+                >
+                  <i class="bi bi-info-circle me-1" aria-hidden="true"></i>Test SSNs
+                </button>
+                <div v-show="showTestSsns" id="test-ssns" class="form-text border rounded bg-light p-2 mt-2">
+                  <p class="mb-1">
+                    <strong>This demo only accepts test numbers that start with 9.</strong> They're never issued to real
+                    people. The last four digits decide what the mock checks return:
+                  </p>
+                  <ul class="mb-1 ps-3">
+                    <li v-for="entry in TEST_SSN_OUTCOMES" :key="entry.ending">
+                      <strong>…{{ entry.ending }}</strong> — {{ entry.label }}<template v-if="entry.meaning">: {{ entry.meaning }}</template>
+                    </li>
+                  </ul>
+                  <p class="mb-0">Example: {{ TEST_SSN_OUTCOMES[0].example }}</p>
+                </div>
+              </div>
               <button type="submit" class="btn btn-primary w-100">Save and continue</button>
             </form>
           </div>

@@ -33,6 +33,35 @@ export interface VendorAdapter {
 
 export const BACKGROUND_CHECK_VENDOR = 'Mock Background Check';
 
+/**
+ * The reserved test SSN endings and what the mock vendors do with each (ADR-12), for the
+ * "Test SSNs" hint on the intake SSN field (T62). A test keeps this list matching the mocks.
+ */
+export const TEST_SSN_OUTCOMES = [
+  { ending: '0001', example: '900-12-0001', outcome: 'clear', label: 'Clear', meaning: '' },
+  {
+    ending: '0002',
+    example: '900-12-0002',
+    outcome: 'match',
+    label: 'Exclusion match',
+    meaning: 'the record goes to Review Required',
+  },
+  {
+    ending: '0003',
+    example: '900-12-0003',
+    outcome: 'never',
+    label: 'Never returns',
+    meaning: 'the check shows as Delayed after 3 business days',
+  },
+  {
+    ending: '0004',
+    example: '900-12-0004',
+    outcome: 'failure',
+    label: 'Vendor failure',
+    meaning: 'the check can be ordered again',
+  },
+] as const;
+
 export type ExclusionList = 'OIG' | 'SAM';
 
 interface MockVendorOptions {
