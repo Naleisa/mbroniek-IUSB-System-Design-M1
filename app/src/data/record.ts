@@ -1,4 +1,4 @@
-import { latestAuthorization } from './checks';
+import { latestAuthorization, latestDocumentFor } from './checks';
 import type { DataLayer } from './dataLayer';
 
 /**
@@ -25,6 +25,12 @@ export interface RecordItem {
   elapsed: string;
   /** The order action for a vendor check in an orderable status (T43): Order check, Retry, or Order again. */
   orderAction: string;
+  /** The newest uploaded document for this item, if any (T44). */
+  document?: { id: string; file_name: string; file_type: string; expiration_date: string; uploaded_at: string };
+  /** A Pending document review item with a document: can be marked verified or unreadable (T44). */
+  reviewable: boolean;
+  /** In Manual Verification and not a possible exclusion match (T46 decides those): can be verified by hand (T44, T64). */
+  canVerifyByHand: boolean;
 }
 
 export interface CaregiverRecord {
@@ -94,8 +100,20 @@ export function caregiverRecord(dataLayer: DataLayer, caregiverId: string): Care
         notes: '',
         elapsed: '',
         orderAction: '',
+        reviewable: false,
+        canVerifyByHand: false,
       };
     }
+    const latest = latestDocumentFor(dataLayer, caregiver.id, item.item_key);
+    const document = latest
+      ? {
+          id: latest.id,
+          file_name: latest.file_name,
+          file_type: latest.file_type,
+          expiration_date: latest.expiration_date,
+          uploaded_at: latest.uploaded_at,
+        }
+      : undefined;
     const outstanding = item.status === 'Ordered' || item.status === 'Delayed';
     return {
       id: item.id,
@@ -112,6 +130,9 @@ export function caregiverRecord(dataLayer: DataLayer, caregiverId: string): Care
       notes: item.notes,
       elapsed: outstanding && item.ordered_at ? orderedAgo(daysSince(item.ordered_at, today)) : '',
       orderAction: VENDOR_METHODS.includes(item.method) ? (ORDER_ACTIONS[item.status] ?? '') : '',
+      document,
+      reviewable: item.method === 'Document review' && item.status === 'Pending' && Boolean(document),
+      canVerifyByHand: item.status === 'Manual Verification' && item.result !== 'Possible match',
     };
   });
 

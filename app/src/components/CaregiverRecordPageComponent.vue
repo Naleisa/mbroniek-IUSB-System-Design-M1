@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router';
 import { dataLayerKey } from '../data/dataLayer';
 import { caregiverRecord } from '../data/record';
 import { checkServiceKey, demoDataKey, sessionKey } from '../session';
+import ItemReviewActions from './ItemReviewActions.vue';
 import StatusBadge from './StatusBadge.vue';
 
 // Caregiver record view (T42, Scenario 2): every template item with its status, source, method, and
@@ -132,6 +133,11 @@ function show(value: string): string {
               <div v-if="orderMessages[item.item_key]" class="alert alert-warning small mt-2 mb-0" role="alert">
                 {{ orderMessages[item.item_key] }}
               </div>
+              <ItemReviewActions
+                v-if="item.document || item.reviewable || item.canVerifyByHand"
+                :item="item"
+                @changed="refresh += 1"
+              />
             </div>
           </article>
         </div>

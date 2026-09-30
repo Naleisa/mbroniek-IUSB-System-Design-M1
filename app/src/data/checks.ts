@@ -313,3 +313,84 @@ export function vendorForItem(backend: StorageBackend, item: Row): VendorAdapter
       return undefined;
   }
 }
+
+export type ReviewResult = { ok: true; item: Row } | { ok: false; reason: string };
+
+/** The newest document uploaded for a caregiver's item, if any. */
+export function latestDocumentFor(dataLayer: DataLayer, caregiverId: string, itemKey: string): Row | undefined {
+  return dataLayer
+    .list('documents')
+    .filter((row) => row.caregiver_id === caregiverId && row.item_key === itemKey)
+    .reduce<Row | undefined>((latest, row) => (!latest || row.uploaded_at >= latest.uploaded_at ? row : latest), undefined);
+}
+
+/** Checks that a coordinator is reviewing a Pending item that has a document; returns the item and document. */
+function pendingDocumentItem(
+  dataLayer: DataLayer,
+  requiredItemId: string,
+  actor: Actor,
+): { ok: true; item: Row; document: Row } | { ok: false; reason: string } {
+  if (actor.role !== 'coordinator') {
+    return { ok: false, reason: 'Only a coordinator can review documents.' };
+  }
+  const item = dataLayer.get('required_items', requiredItemId);
+  if (!item) {
+    return { ok: false, reason: 'We could not find that item.' };
+  }
+  if (item.status !== 'Pending') {
+    return { ok: false, reason: `Only a Pending document can be reviewed. This one is ${item.status}.` };
+  }
+  const document = latestDocumentFor(dataLayer, item.caregiver_id, item.item_key);
+  if (!document) {
+    return { ok: false, reason: 'Nothing has been uploaded for this item yet.' };
+  }
+  return { ok: true, item, document };
+}
+
+/**
+ * A coordinator marks an uploaded document verified after reviewing it (T44, R2). The item
+ * keeps its "Document review" method and the expiration date entered at upload, and gets
+ * today's verification date; then eligibility is checked (R12).
+ */
+export function verifyDocument(dataLayer: DataLayer, requiredItemId: string, actor: Actor): ReviewResult {
+  const found = pendingDocumentItem(dataLayer, requiredItemId, actor);
+  if (!found.ok) {
+    return found;
+  }
+  const expirationDate = found.item.expiration_date || found.document.expiration_date;
+  if (!expirationDate) {
+    return { ok: false, reason: 'This document has no expiration date, so it cannot be marked verified.' };
+  }
+  const updated = dataLayer.update(
+    'required_items',
+    found.item.id,
+    {
+      status: 'Verified',
+      verified_date: formatLocalDateTime(dataLayer.today()).slice(0, 10),
+      expiration_date: expirationDate,
+      evidence: `Reviewed ${found.document.file_name}`,
+      notes: '',
+    },
+    actor,
+  );
+  checkEligibility(dataLayer, found.item.caregiver_id);
+  return { ok: true, item: updated };
+}
+
+/**
+ * A coordinator marks an uploaded document unreadable (T44, R22, ADR-15): the item goes to
+ * Manual Verification instead of being dropped or advanced, to be verified by hand.
+ */
+export function markUnreadable(dataLayer: DataLayer, requiredItemId: string, actor: Actor): ReviewResult {
+  const found = pendingDocumentItem(dataLayer, requiredItemId, actor);
+  if (!found.ok) {
+    return found;
+  }
+  const updated = dataLayer.update(
+    'required_items',
+    found.item.id,
+    { status: 'Manual Verification', notes: "The document couldn't be read. Verify it by hand." },
+    actor,
+  );
+  return { ok: true, item: updated };
+}
