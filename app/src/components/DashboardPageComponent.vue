@@ -55,9 +55,14 @@ function signOut() {
               <strong>{{ dashboard.counts[label] }}</strong>
             </div>
           </div>
-          <router-link to="/worklist" class="btn btn-outline-primary btn-sm mt-3">
-            <i class="bi bi-calendar-x me-1" aria-hidden="true"></i>Expiration worklist
-          </router-link>
+          <div class="d-flex flex-wrap gap-2 mt-3">
+            <router-link to="/worklist" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-calendar-x me-1" aria-hidden="true"></i>Expiration worklist
+            </router-link>
+            <router-link to="/messages" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-envelope me-1" aria-hidden="true"></i>Agency outbox
+            </router-link>
+          </div>
         </div>
       </div>
 
