@@ -4,6 +4,7 @@ title: CareMatch Docs
 theme: jekyll-theme-primer
 baseurl: /mbroniek-IUSB-System-Design-M1/docs
 
-# Scratch notes and prompts stay in the repo only.
+# Prompts and session notes stay in the repo only; Mike's build log (prompt-scratch/learned.md) is published.
 exclude:
-  - prompt-scratch
+  - prompt-scratch/prompt-template
+  - prompt-scratch/session-context-*

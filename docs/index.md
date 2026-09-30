@@ -15,3 +15,4 @@ Project documents for the CareMatch demo. The demo app itself is at [the CareMat
 - [Manual checks](manual-checks.md)
 - [Performance on Slow 3G](performance.md)
 - [User acceptance testing guide](uat.md)
+- [What I learned: notes on building with AI](prompt-scratch/learned.md)
