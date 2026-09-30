@@ -74,3 +74,24 @@ describe('coordinator dashboard (R4, R7, R8, R16, R20, R25)', () => {
     ]);
   });
 });
+
+describe('dashboard next steps (T41 follow-up)', () => {
+  it("gives each record the coordinator's next step", async () => {
+    const dashboard = coordinatorDashboard(await signedInAs('dana.whitfield@hoosierhomecare.example'));
+    const steps = (name: string) => card(dashboard, name)?.nextSteps;
+
+    expect(steps('Olivia Martin')).toEqual(['Review the possible exclusion match']);
+    expect(steps('Samuel Okafor')).toEqual([expect.stringMatching(/^TB test result expired on \d{4}-\d{2}-\d{2}$/)]);
+    expect(steps('James Carter')).toEqual(['Ready to start screening']);
+    expect(steps('Linda Brooks')).toEqual(['Ready to mark Cleared']);
+    expect(steps('Tom Nguyen')).toEqual([
+      'Home Health Aide certification: verify it by hand',
+      'Criminal background check failed: order it again',
+    ]);
+    expect(steps('Robert King')).toEqual([
+      expect.stringMatching(/^CPR and First Aid certification expires on \d{4}-\d{2}-\d{2}$/),
+      expect.stringMatching(/^Replacement requested for CPR and First Aid certification, due \d{4}-\d{2}-\d{2}$/),
+    ]);
+    expect(steps('Grace Kim')).toEqual([]);
+  });
+});

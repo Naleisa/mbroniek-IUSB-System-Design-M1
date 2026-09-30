@@ -41,3 +41,7 @@ T32 discovered an issue with typing phone numbers
 T35 had to clear up where wording stayed for consent.  Decided to keep it in constentWording.ts which will require a push to update, but to avoid creating another csv
 
 T40 had to go through test updates due to multiple failing tests. worked with claude to resolve inconsistencies and bugs
+
+T41 discovered an issue where T44 wouldn't actually allow documents to be seen and verified for readability. Updated T44 task with that requirement.
+
+T42 discovered issues with the seeded caregiver information where we weren't listing the proper reasons for why things were failed

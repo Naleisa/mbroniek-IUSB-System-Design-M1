@@ -3,6 +3,7 @@ import LandingPageComponent from '../components/LandingPageComponent.vue';
 import ComponentsPageComponent from '../components/ComponentsPageComponent.vue';
 import SignInPageComponent from '../components/SignInPageComponent.vue';
 import DashboardPageComponent from '../components/DashboardPageComponent.vue';
+import CaregiverRecordPageComponent from '../components/CaregiverRecordPageComponent.vue';
 import ApplicantSignInPageComponent from '../components/ApplicantSignInPageComponent.vue';
 import OutboxPageComponent from '../components/OutboxPageComponent.vue';
 import AuthPageComponent from '../components/AuthPageComponent.vue';
@@ -31,6 +32,11 @@ const routes = [
   {
     path: '/dashboard',
     component: DashboardPageComponent,
+    meta: { requiresCoordinator: true },
+  },
+  {
+    path: '/caregivers/:id',
+    component: CaregiverRecordPageComponent,
     meta: { requiresCoordinator: true },
   },
   {

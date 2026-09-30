@@ -15,6 +15,8 @@ export interface DashboardCard {
   name: string;
   state: string;
   highlights: { label: Highlight; detail: string }[];
+  /** What the coordinator should do next, in plain words; empty when nothing is waiting on them. */
+  nextSteps: string[];
 }
 
 export interface Dashboard {
@@ -73,8 +75,48 @@ export function coordinatorDashboard(dataLayer: DataLayer): Dashboard {
       name: `${caregiver.first_name} ${caregiver.last_name}`.trim() || 'New applicant',
       state: caregiver.lifecycle_state,
       highlights,
+      nextSteps: nextStepsFor(caregiver),
     };
   };
+
+  const itemName = (itemKey: string) => templateItems.find((row) => row.item_key === itemKey)?.name ?? itemKey;
+  const openReplacements = dataLayer
+    .list('replacement_requests')
+    .filter((row) => row.status === 'Requested' || row.status === 'Submitted');
+
+  /** The coordinator's next steps for one record, from its state and its items (T41 follow-up). */
+  function nextStepsFor(caregiver: Row): string[] {
+    const steps: string[] = [];
+    const stateSteps: Record<string, string> = {
+      'Intake Complete': 'Ready to start screening',
+      Eligible: 'Ready to mark Cleared',
+      'Review Required': 'Review the possible exclusion match',
+    };
+    if (stateSteps[caregiver.lifecycle_state]) {
+      steps.push(stateSteps[caregiver.lifecycle_state]);
+    }
+    for (const item of requiredItems.filter((row) => row.caregiver_id === caregiver.id)) {
+      const name = itemName(item.item_key);
+      if (item.status === 'Expired') {
+        steps.push(`${name} expired on ${item.expiration_date}`);
+      } else if (item.status === 'Retryable') {
+        steps.push(`${name} failed: order it again`);
+      } else if (item.status === 'Manual Verification' && item.result !== 'Possible match') {
+        // A possible exclusion match is covered by the Review Required step above.
+        steps.push(`${name}: verify it by hand`);
+      } else if (item.status === 'Expiring') {
+        steps.push(`${name} expires on ${item.expiration_date}`);
+      }
+    }
+    for (const request of openReplacements.filter((row) => row.caregiver_id === caregiver.id)) {
+      steps.push(
+        request.status === 'Submitted'
+          ? `Replacement for ${itemName(request.item_key)} uploaded: review it`
+          : `Replacement requested for ${itemName(request.item_key)}, due ${request.due_date}`,
+      );
+    }
+    return steps;
+  }
 
   const caregivers = dataLayer.list('caregivers');
   const groups = LIFECYCLE_STATES.map((state) => ({

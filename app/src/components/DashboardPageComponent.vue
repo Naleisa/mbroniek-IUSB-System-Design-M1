@@ -66,15 +66,24 @@ function signOut() {
         <div class="row g-3">
           <div v-for="card in group.cards" :key="card.id" class="col-12 col-md-6 col-lg-4">
             <article class="card h-100">
-              <div class="card-body">
+              <div class="card-body d-flex flex-column">
                 <h3 class="h6 mb-2">{{ card.name }}</h3>
-                <ul v-if="card.highlights.length" class="list-unstyled mb-0">
+                <ul v-if="card.highlights.length" class="list-unstyled mb-3">
                   <li v-for="highlight in card.highlights" :key="highlight.label + highlight.detail" class="mb-1">
                     <StatusBadge :status="highlight.label" />
                     <span class="small ms-1">{{ highlight.detail }}</span>
                   </li>
                 </ul>
-                <p v-else class="small mb-0">Nothing needs attention.</p>
+                <template v-if="card.nextSteps.length">
+                  <p class="small fw-medium mb-1">Next step</p>
+                  <ul class="small mb-3 ps-3">
+                    <li v-for="step in card.nextSteps" :key="step">{{ step }}</li>
+                  </ul>
+                </template>
+                <p v-else-if="!card.highlights.length" class="small mb-3">Nothing to do right now.</p>
+                <router-link :to="`/caregivers/${card.id}`" class="btn btn-outline-primary btn-sm mt-auto w-100">
+                  View record
+                </router-link>
               </div>
             </article>
           </div>
