@@ -37,6 +37,8 @@ export interface CaregiverRecord {
   id: string;
   name: string;
   lifecycleState: string;
+  /** When the record entered its current state. */
+  stateChangedAt: string;
   email: string;
   phone: string;
   ssnLast4: string;
@@ -146,6 +148,7 @@ export function caregiverRecord(dataLayer: DataLayer, caregiverId: string): Care
     id: caregiver.id,
     name: `${caregiver.first_name} ${caregiver.last_name}`.trim() || 'New applicant',
     lifecycleState: caregiver.lifecycle_state,
+    stateChangedAt: caregiver.state_changed_at ?? '',
     email: caregiver.email,
     phone: caregiver.phone,
     ssnLast4: caregiver.ssn_last4 ?? '',

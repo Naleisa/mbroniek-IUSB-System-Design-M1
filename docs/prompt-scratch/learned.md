@@ -45,3 +45,5 @@ T40 had to go through test updates due to multiple failing tests. worked with cl
 T41 discovered an issue where T44 wouldn't actually allow documents to be seen and verified for readability. Updated T44 task with that requirement.
 
 T42 discovered issues with the seeded caregiver information where we weren't listing the proper reasons for why things were failed
+
+T44 i realized we're not building any home page at all for the demo.  Requested that we add a task for demo shortcuts, which breaks ADR18 and T30, but required for ease of use of the demo

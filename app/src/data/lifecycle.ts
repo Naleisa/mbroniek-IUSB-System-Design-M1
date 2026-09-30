@@ -130,3 +130,34 @@ export function checkEligibility(dataLayer: DataLayer, caregiverId: string): Tra
   }
   return transitionCaregiver(dataLayer, caregiverId, 'Eligible', SYSTEM);
 }
+
+/** States a coordinator can try to clear from (T45). Screening is included so the refusal can name what's still needed. */
+const CLEARABLE_FROM = ['Screening In Progress', 'Eligible', 'Not Current'];
+
+/**
+ * The Mark Cleared action (T45, R23, R14, C1). Checks the items first, so a record that
+ * isn't ready is refused with each blocking item named (Spec Section 5, criterion 2),
+ * whatever its state; otherwise the coordinator's move to Cleared goes through the
+ * lifecycle rules and is audited.
+ */
+export function clearRecord(dataLayer: DataLayer, caregiverId: string, actor: Actor): TransitionResult {
+  if (actor.role !== 'coordinator') {
+    return { ok: false, reason: 'Only a coordinator can mark a record Cleared.' };
+  }
+  const caregiver = dataLayer.get('caregivers', caregiverId);
+  if (!caregiver) {
+    return { ok: false, reason: 'We could not find that caregiver record.' };
+  }
+  if (!CLEARABLE_FROM.includes(caregiver.lifecycle_state)) {
+    return { ok: false, reason: `A record in ${caregiver.lifecycle_state} can't be marked Cleared.` };
+  }
+  const blockers = findBlockingItems(dataLayer, caregiver);
+  if (blockers.length > 0) {
+    return { ok: false, reason: `This record can't be cleared yet. Still needed: ${blockers.join('; ')}.` };
+  }
+  // A record in screening with everything current is eligible; record that step before clearing.
+  if (caregiver.lifecycle_state === 'Screening In Progress') {
+    checkEligibility(dataLayer, caregiverId);
+  }
+  return transitionCaregiver(dataLayer, caregiverId, 'Cleared', actor);
+}

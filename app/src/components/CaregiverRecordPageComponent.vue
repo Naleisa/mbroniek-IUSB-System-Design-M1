@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, inject, reactive, ref } from 'vue';
+import { computed, inject, reactive, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { dataLayerKey } from '../data/dataLayer';
+import { clearRecord } from '../data/lifecycle';
 import { caregiverRecord } from '../data/record';
 import { checkServiceKey, demoDataKey, sessionKey } from '../session';
 import ItemReviewActions from './ItemReviewActions.vue';
@@ -38,6 +39,33 @@ function order(itemId: string, itemKey: string) {
     refresh.value += 1;
   });
 }
+
+// Mark Cleared (T45, R23, C1): a coordinator's decision, confirmed inline. A record that isn't ready is
+// refused with each blocking item named (Spec Section 5, criterion 2).
+const CLEARABLE_STATES = ['Screening In Progress', 'Eligible', 'Not Current'];
+const confirmingClear = ref(false);
+const clearMessage = ref('');
+function markCleared() {
+  confirmingClear.value = false;
+  const result = clearRecord(dataLayer, String(route.params.id ?? ''), {
+    role: 'coordinator',
+    name: session.value?.display_name ?? 'Coordinator',
+  });
+  clearMessage.value = result.ok ? '' : result.reason;
+  refresh.value += 1;
+}
+
+// Opening another record reuses this page, so messages from the last one are cleared.
+watch(
+  () => route.params.id,
+  () => {
+    confirmingClear.value = false;
+    clearMessage.value = '';
+    for (const key of Object.keys(orderMessages)) {
+      delete orderMessages[key];
+    }
+  },
+);
 
 function show(value: string): string {
   return value ? value.replace('T', ' ') : '—';
@@ -83,6 +111,29 @@ function show(value: string): string {
               <dd class="col-7 col-md-9">{{ record.replacement }}</dd>
             </template>
           </dl>
+        </div>
+      </div>
+
+      <div v-if="record.lifecycleState === 'Cleared' || CLEARABLE_STATES.includes(record.lifecycleState)" class="card mb-4">
+        <div class="card-body">
+          <h2 class="h5">Clearing</h2>
+          <p v-if="record.lifecycleState === 'Cleared'" class="mb-0" role="status">
+            <i class="bi bi-check-circle me-1" aria-hidden="true"></i>
+            Cleared on {{ record.stateChangedAt.slice(0, 10) }}.
+          </p>
+          <template v-else>
+            <button v-if="!confirmingClear" type="button" class="btn btn-primary w-100" @click="confirmingClear = true">
+              Mark Cleared
+            </button>
+            <div v-else class="border rounded p-3" role="alert">
+              <p class="mb-2">Mark {{ record.name }} Cleared? This means they can be scheduled with clients.</p>
+              <button type="button" class="btn btn-primary w-100" @click="markCleared">Yes, mark Cleared</button>
+              <button type="button" class="btn btn-outline-primary w-100 mt-2" @click="confirmingClear = false">
+                Cancel
+              </button>
+            </div>
+            <div v-if="clearMessage" class="alert alert-warning mt-3 mb-0" role="alert">{{ clearMessage }}</div>
+          </template>
         </div>
       </div>
 
