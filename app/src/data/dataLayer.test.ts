@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createDataLayer } from './dataLayer';
+import { createSystemDataLayer } from './dataLayer';
 import { createMemoryBackend } from './memoryBackend';
 import { resolveRelativeDate } from './relativeDates';
 import type { SeedFiles } from './seed';
@@ -26,7 +26,7 @@ describe('resolveRelativeDate', () => {
 
 describe('data layer seed loading', () => {
   it('loads a test seed, resolves relative dates, and reads rows back through the interface', async () => {
-    const dataLayer = createDataLayer(createMemoryBackend());
+    const dataLayer = createSystemDataLayer(createMemoryBackend());
 
     expect(await dataLayer.loadSeed(async () => testSeed, today)).toBe(true);
 
@@ -41,11 +41,11 @@ describe('data layer seed loading', () => {
 
   it('does not reload the seed over saved data on a second start', async () => {
     const backend = createMemoryBackend();
-    const firstStart = createDataLayer(backend);
+    const firstStart = createSystemDataLayer(backend);
     await firstStart.loadSeed(async () => testSeed, today);
     firstStart.update('agencies', 'agency-a', { name: 'Changed Name' }, { role: 'system', name: 'Test' });
 
-    const secondStart = createDataLayer(backend);
+    const secondStart = createSystemDataLayer(backend);
     expect(await secondStart.loadSeed(async () => testSeed, today)).toBe(false);
     expect(secondStart.get('agencies', 'agency-a')?.name).toBe('Changed Name');
   });

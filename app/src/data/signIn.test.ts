@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import usersCsv from '../../public/seed/users.csv?raw';
-import { AUDIT_TABLE, createDataLayer } from './dataLayer';
+import { AUDIT_TABLE, createDataLayer, createSystemDataLayer } from './dataLayer';
 import { createMemoryBackend } from './memoryBackend';
 
 async function loadUsers() {
@@ -39,6 +39,7 @@ describe('coordinator sign-in (ADR-05)', () => {
 
     afterReload.signOut();
     expect(afterReload.getSignedInUser()).toBeUndefined();
-    expect(afterReload.list(AUDIT_TABLE).map((event) => event.event)).toEqual(['Signed in', 'Signed out']);
+    // Signed out, the screen data layer shows no audit log; the system data layer reads it.
+    expect(createSystemDataLayer(backend).list(AUDIT_TABLE).map((event) => event.event)).toEqual(['Signed in', 'Signed out']);
   });
 });

@@ -36,7 +36,7 @@ async function seedWithFiles() {
 
 async function signInAsMaria(dataLayer: Awaited<ReturnType<typeof seedWithFiles>>) {
   dataLayer.requestSignInLink('maria.gonzalez@example.com');
-  const token = /token=([^&\s]+)/.exec(dataLayer.list('notifications').slice(-1)[0].body)?.[1] ?? '';
+  const token = /token=([^&\s]+)/.exec(dataLayer.outboxFor('maria.gonzalez@example.com')[0].body)?.[1] ?? '';
   expect(dataLayer.signInWithLink(decodeURIComponent(token)).ok).toBe(true);
 }
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUDIT_TABLE, createDataLayer } from './dataLayer';
+import { AUDIT_TABLE, createSystemDataLayer } from './dataLayer';
 import { createMemoryBackend } from './memoryBackend';
 import type { SeedFiles } from './seed';
 import type { Actor } from './types';
@@ -14,7 +14,7 @@ const dana: Actor = { role: 'coordinator', name: 'Dana Whitfield' };
 
 describe('Reset demo data (T59, ADR-21)', () => {
   it('puts changed records back to their seeded values and clears everything added since', async () => {
-    const dataLayer = createDataLayer(createMemoryBackend());
+    const dataLayer = createSystemDataLayer(createMemoryBackend());
     await dataLayer.loadSeed(async () => realSeed);
     const seededAuditCount = dataLayer.list(AUDIT_TABLE).length;
 
@@ -33,7 +33,7 @@ describe('Reset demo data (T59, ADR-21)', () => {
   });
 
   it('keeps the current data when the seed files cannot be loaded', async () => {
-    const dataLayer = createDataLayer(createMemoryBackend());
+    const dataLayer = createSystemDataLayer(createMemoryBackend());
     await dataLayer.loadSeed(async () => realSeed);
     dataLayer.update('caregivers', 'cg-07', { phone: '(574) 555-0199' }, dana);
 

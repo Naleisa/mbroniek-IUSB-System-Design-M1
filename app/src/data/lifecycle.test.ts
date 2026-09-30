@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AUDIT_TABLE, createDataLayer } from './dataLayer';
+import { AUDIT_TABLE, createSystemDataLayer } from './dataLayer';
 import { LIFECYCLE_TRANSITIONS, transitionCaregiver } from './lifecycle';
 import { createMemoryBackend } from './memoryBackend';
 import { LIFECYCLE_STATES, type Actor, type LifecycleState } from './types';
@@ -11,7 +11,7 @@ const actors: Record<Actor['role'], Actor> = {
 };
 
 async function caregiverIn(state: LifecycleState) {
-  const dataLayer = createDataLayer(createMemoryBackend());
+  const dataLayer = createSystemDataLayer(createMemoryBackend());
   await dataLayer.loadSeed(async () => ({
     caregivers: `id,agency_id,lifecycle_state,state_changed_at\ncg-05,agency-a,${state},2026-01-01T09:00\n`,
   }));

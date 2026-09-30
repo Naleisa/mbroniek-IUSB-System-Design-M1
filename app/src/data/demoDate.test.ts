@@ -101,7 +101,7 @@ describe('demo date (ADR-13, T60)', () => {
   it('expires a sign-in link by the demo date', async () => {
     const { dataLayer } = await seeded();
     dataLayer.requestSignInLink('maria.gonzalez@example.com');
-    const token = /token=([^&\s]+)/.exec(dataLayer.list('notifications').slice(-1)[0].body)?.[1] ?? '';
+    const token = /token=([^&\s]+)/.exec(dataLayer.outboxFor('maria.gonzalez@example.com')[0].body)?.[1] ?? '';
 
     const eightDaysOut = formatLocalDateTime(new Date(Date.now() + 8 * 24 * 60 * 60 * 1000)).slice(0, 10);
     dataLayer.setDemoDate(eightDaysOut);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import caregiversCsv from '../../public/seed/caregivers.csv?raw';
-import { AUDIT_TABLE, createDataLayer } from './dataLayer';
+import { AUDIT_TABLE, createSystemDataLayer } from './dataLayer';
 import { createMemoryBackend } from './memoryBackend';
 import { SEED_TABLES } from './seed';
 import type { Actor } from './types';
@@ -10,7 +10,7 @@ const applicant: Actor = { role: 'applicant', name: 'Robert King' };
 
 async function loadSeed(caregivers = caregiversCsv) {
   const backend = createMemoryBackend();
-  const dataLayer = createDataLayer(backend);
+  const dataLayer = createSystemDataLayer(backend);
   await dataLayer.loadSeed(async () => ({ caregivers }));
   return { dataLayer, vendorVault: createVendorVault(backend) };
 }

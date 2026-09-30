@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { AUDIT_TABLE, createDataLayer } from './dataLayer';
+import { AUDIT_TABLE, createSystemDataLayer } from './dataLayer';
 import { createMemoryBackend } from './memoryBackend';
 import type { Actor } from './types';
 
 const coordinator: Actor = { role: 'coordinator', name: 'Dana Whitfield' };
 
 async function loadTestSeed() {
-  const dataLayer = createDataLayer(createMemoryBackend());
+  const dataLayer = createSystemDataLayer(createMemoryBackend());
   await dataLayer.loadSeed(async () => ({
     caregivers: 'id,agency_id,first_name,lifecycle_state\ncg-05,agency-a,Linda,Eligible\n',
     required_items: 'id,caregiver_id,item_key,status\nri-cg-05-tb_test,cg-05,tb_test,Pending\n',

@@ -7,6 +7,7 @@ import ApplicantSignInPageComponent from '../components/ApplicantSignInPageCompo
 import OutboxPageComponent from '../components/OutboxPageComponent.vue';
 import AuthPageComponent from '../components/AuthPageComponent.vue';
 import ApplicantHomePageComponent from '../components/ApplicantHomePageComponent.vue';
+import IntakeStartPageComponent from '../components/IntakeStartPageComponent.vue';
 
 const routes = [
   {
@@ -42,6 +43,10 @@ const routes = [
     path: '/applicant',
     component: ApplicantHomePageComponent,
     meta: { requiresApplicant: true },
+  },
+  {
+    path: '/apply/:agencySlug',
+    component: IntakeStartPageComponent,
   },
 ];
 

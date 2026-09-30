@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import settingsCsv from '../../public/seed/settings.csv?raw';
 import usersCsv from '../../public/seed/users.csv?raw';
-import { AUDIT_TABLE, createDataLayer } from './dataLayer';
+import { AUDIT_TABLE, createSystemDataLayer } from './dataLayer';
 import { createMemoryBackend } from './memoryBackend';
 
 async function loadSeed() {
-  const dataLayer = createDataLayer(createMemoryBackend());
+  const dataLayer = createSystemDataLayer(createMemoryBackend());
   await dataLayer.loadSeed(async () => ({ users: usersCsv, settings: settingsCsv }));
   return dataLayer;
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import caregiversCsv from '../../public/seed/caregivers.csv?raw';
 import requiredItemsCsv from '../../public/seed/required_items.csv?raw';
 import templateItemsCsv from '../../public/seed/template_items.csv?raw';
-import { createDataLayer } from './dataLayer';
+import { createSystemDataLayer } from './dataLayer';
 import { checkEligibility } from './lifecycle';
 import { createMemoryBackend } from './memoryBackend';
 import type { Actor } from './types';
@@ -13,7 +13,7 @@ const vendor: Actor = { role: 'system', name: 'CareMatch' };
 const OUTSTANDING = ['ri-cg-11-background_check', 'ri-cg-11-oig_exclusion', 'ri-cg-11-sam_exclusion'];
 
 async function loadSeed(requiredItems = requiredItemsCsv) {
-  const dataLayer = createDataLayer(createMemoryBackend());
+  const dataLayer = createSystemDataLayer(createMemoryBackend());
   await dataLayer.loadSeed(async () => ({
     caregivers: caregiversCsv,
     required_items: requiredItems,

@@ -9,15 +9,11 @@ const route = useRoute();
 
 const recipient = computed(() => (typeof route.query.to === 'string' ? route.query.to.trim().toLowerCase() : ''));
 
-const messages = computed(() => {
-  const user = dataLayer.list('users').find((row) => row.email.toLowerCase() === recipient.value);
-  if (!user) {
-    return [];
-  }
-  return dataLayer
-    .list('notifications')
-    .filter((message) => message.channel === 'email' && message.recipient_user_id === user.id)
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))
+// A purpose-built lookup by address, so this page works while signed out (T30).
+const messages = computed(() =>
+  dataLayer
+    .outboxFor(recipient.value)
+    .filter((message) => message.channel === 'email')
     // The link stays in the stored email; the outbox shows it as a button instead of raw text.
     .map((message) => ({
       id: message.id,
@@ -25,8 +21,8 @@ const messages = computed(() => {
       body: message.body.replace(/:?\s*#\/auth\?\S+/, '.'),
       created_at: message.created_at,
       link: /#(\/auth\?\S+)/.exec(message.body)?.[1],
-    }));
-});
+    })),
+);
 </script>
 
 <template>

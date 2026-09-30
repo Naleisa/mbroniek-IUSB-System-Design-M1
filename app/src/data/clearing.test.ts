@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import caregiversCsv from '../../public/seed/caregivers.csv?raw';
 import requiredItemsCsv from '../../public/seed/required_items.csv?raw';
 import templateItemsCsv from '../../public/seed/template_items.csv?raw';
-import { createDataLayer } from './dataLayer';
+import { createSystemDataLayer } from './dataLayer';
 import { transitionCaregiver } from './lifecycle';
 import { createMemoryBackend } from './memoryBackend';
 import type { Actor } from './types';
@@ -11,7 +11,7 @@ const coordinator: Actor = { role: 'coordinator', name: 'Dana Whitfield' };
 const system: Actor = { role: 'system', name: 'CareMatch' };
 
 async function loadSeed(requiredItems = requiredItemsCsv) {
-  const dataLayer = createDataLayer(createMemoryBackend());
+  const dataLayer = createSystemDataLayer(createMemoryBackend());
   await dataLayer.loadSeed(async () => ({
     caregivers: caregiversCsv,
     required_items: requiredItems,

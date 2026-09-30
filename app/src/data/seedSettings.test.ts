@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import agenciesCsv from '../../public/seed/agencies.csv?raw';
 import settingsCsv from '../../public/seed/settings.csv?raw';
 import usersCsv from '../../public/seed/users.csv?raw';
-import { createDataLayer } from './dataLayer';
+import { createSystemDataLayer } from './dataLayer';
 import { createMemoryBackend } from './memoryBackend';
 import type { SeedFiles } from './seed';
 
 // A fresh data layer loading the seed is what "Reset demo data" does (clear storage, load the seed).
 async function loadFreshSeed(files: SeedFiles) {
-  const dataLayer = createDataLayer(createMemoryBackend());
+  const dataLayer = createSystemDataLayer(createMemoryBackend());
   await dataLayer.loadSeed(async () => files);
   return dataLayer;
 }

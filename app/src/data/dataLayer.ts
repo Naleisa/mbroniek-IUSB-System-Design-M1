@@ -37,6 +37,19 @@ export interface DataLayer {
   signInWithLink(token: string): SignInWithLinkResult;
   signOut(): void;
   getSignedInUser(): Row | undefined;
+  /**
+   * Agency intake link (ADR-18). Creates an Intake In Progress record under the agency
+   * with this intake slug, with one Pending item per template item, and signs the new
+   * applicant in. Returns the new caregiver record, or undefined for an unknown slug.
+   */
+  startIntake(agencySlug: string): Row | undefined;
+  /** The agency's public name for its intake link, or undefined for an unknown slug. Lists nothing. */
+  agencyNameForIntake(agencySlug: string): string | undefined;
+  /**
+   * The demo outbox (ADR-06): messages sent to one email address, newest first. It
+   * stands in for that person's own inbox, so it works while signed out.
+   */
+  outboxFor(email: string): Row[];
   /** Loads the seed on first start only. Returns true when the seed was loaded. */
   loadSeed(getSeedFiles: () => Promise<SeedFiles>, today?: Date): Promise<boolean>;
   /** "Reset demo data" (T59): clears all stored data, documents, the session, and the demo date, then reloads the seed. */
@@ -231,10 +244,10 @@ function isApplicantRow(table: string, row: Row, applicant: Row): boolean {
   }
 }
 
-type Viewer = { role: 'coordinator'; agency: string } | { role: 'applicant'; user: Row };
+type Viewer = { role: 'coordinator'; agency: string } | { role: 'applicant'; user: Row } | { role: 'signed-out' };
 
 function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
-  /** Who is reading: a signed-in coordinator or applicant, or undefined when no filter applies. */
+  /** Who is reading: a signed-in coordinator or applicant, someone signed out, or undefined when no filter applies. */
   function viewer(): Viewer | undefined {
     if (!filtered) {
       return undefined;
@@ -247,12 +260,16 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
     if (user?.role === 'applicant') {
       return { role: 'applicant', user };
     }
-    return undefined;
+    return { role: 'signed-out' };
   }
 
   function isVisible(table: string, row: Row, reader: Viewer | undefined): boolean {
     if (!reader) {
       return true;
+    }
+    if (reader.role === 'signed-out') {
+      // Signed-out pages see only the shared tables (C7); they use narrow functions such as startIntake instead.
+      return SHARED_TABLES.includes(table);
     }
     if (reader.role === 'applicant') {
       return isApplicantRow(table, row, reader.user);
@@ -263,6 +280,9 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
 
   function refuseOutOfScopeWrite(table: string, row: Row): void {
     const reader = viewer();
+    if (reader?.role === 'signed-out') {
+      throw new Error('Please sign in before making changes.');
+    }
     if (!isVisible(table, row, reader)) {
       throw new Error(
         reader?.role === 'applicant'
@@ -414,7 +434,8 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
       const user = backend
         .readTable('users')
         .find((row) => row.role === 'applicant' && row.email.toLowerCase() === email.trim().toLowerCase());
-      if (!user) {
+      // New intakes have no email until the identity step (T31), so a blank address never matches.
+      if (!user || !email.trim()) {
         return false;
       }
 
@@ -485,6 +506,87 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
       return backend.readTable('users').find((row) => row.id === userId);
     },
 
+    startIntake: (agencySlug) => {
+      const agency = agencyForIntake(agencySlug);
+      const template = agency && backend.readTable('requirement_templates').find((row) => row.state === agency.state);
+      if (!agency || !template) {
+        return undefined;
+      }
+
+      const now = formatLocalDateTime(today());
+      const caregiverId = `cg-${crypto.randomUUID().slice(0, 8)}`;
+      const caregiver: Row = {
+        id: caregiverId,
+        agency_id: agency.id,
+        template_id: template.id,
+        first_name: '',
+        last_name: '',
+        email: '',
+        phone: '',
+        date_of_birth: '',
+        ssn_token: '',
+        ssn_last4: '',
+        lifecycle_state: 'Intake In Progress',
+        created_at: now,
+        state_changed_at: now,
+      };
+      const user: Row = {
+        id: `u-${caregiverId}`,
+        agency_id: agency.id,
+        role: 'applicant',
+        display_name: 'New applicant',
+        email: '',
+        password: '',
+        caregiver_id: caregiverId,
+      };
+      // The item list is fixed from the template when the record starts (ADR-03), all Pending.
+      const items: Row[] = backend
+        .readTable('template_items')
+        .filter((item) => item.template_id === template.id)
+        .map((item) => ({
+          id: `ri-${caregiverId}-${item.item_key}`,
+          caregiver_id: caregiverId,
+          item_key: item.item_key,
+          status: 'Pending',
+          source: item.source,
+          method: item.method,
+          ordered_at: '',
+          verified_date: '',
+          expiration_date: '',
+          result: '',
+          evidence: '',
+          notes: '',
+        }));
+
+      // Written directly: no one is signed in yet, and the record is under the agency from the start (R4).
+      backend.writeTable('caregivers', [...backend.readTable('caregivers'), caregiver]);
+      backend.writeTable('users', [...backend.readTable('users'), user]);
+      backend.writeTable('required_items', [...backend.readTable('required_items'), ...items]);
+      backend.writeTable(SESSION_TABLE, [{ id: 'current', user_id: user.id }]);
+      appendAuditEvent(
+        { role: 'applicant', name: user.display_name },
+        'Record created',
+        `Started intake from the ${agency.name} link`,
+        'caregivers',
+        caregiver,
+      );
+      return caregiver;
+    },
+
+    agencyNameForIntake: (agencySlug) => agencyForIntake(agencySlug)?.name,
+
+    outboxFor: (email) => {
+      const address = email.trim().toLowerCase();
+      const user = address && backend.readTable('users').find((row) => row.email.toLowerCase() === address);
+      if (!user) {
+        return [];
+      }
+      return backend
+        .readTable('notifications')
+        .filter((message) => message.recipient_user_id === user.id)
+        .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    },
+
     loadSeed,
 
     resetDemoData: async (getSeedFiles, today = new Date()) => {
@@ -509,6 +611,10 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
       backend.writeTable(DEMO_DATE_TABLE, [{ id: 'current', date }]);
     },
   };
+
+  function agencyForIntake(agencySlug: string): Row | undefined {
+    return backend.readTable('agencies').find((row) => row.intake_slug && row.intake_slug === agencySlug);
+  }
 
   function getDemoDate(): string | undefined {
     return backend.readTable(DEMO_DATE_TABLE)[0]?.date || undefined;
