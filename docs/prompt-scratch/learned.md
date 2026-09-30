@@ -39,3 +39,5 @@ T31 after testing realized we need cleanup of text while filling phone numbers
 T32 discovered an issue with typing phone numbers
 
 T35 had to clear up where wording stayed for consent.  Decided to keep it in constentWording.ts which will require a push to update, but to avoid creating another csv
+
+T40 had to go through test updates due to multiple failing tests. worked with claude to resolve inconsistencies and bugs

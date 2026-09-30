@@ -24,6 +24,10 @@ const toneByStatus: Record<string, Tone> = {
   'Screening In Progress': 'neutral',
   'Not Current': 'danger',
   'Review Required': 'danger',
+  // Coordinator dashboard highlights (T41)
+  'Incomplete intake': 'warning',
+  'Delayed check': 'warning',
+  'Declined consent': 'danger',
 };
 
 const toneStyles: Record<Tone, { classes: string; icon: string }> = {
