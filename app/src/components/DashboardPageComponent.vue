@@ -55,6 +55,9 @@ function signOut() {
               <strong>{{ dashboard.counts[label] }}</strong>
             </div>
           </div>
+          <router-link to="/worklist" class="btn btn-outline-primary btn-sm mt-3">
+            <i class="bi bi-calendar-x me-1" aria-hidden="true"></i>Expiration worklist
+          </router-link>
         </div>
       </div>
 
