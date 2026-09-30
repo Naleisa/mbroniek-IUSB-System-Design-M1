@@ -2,7 +2,7 @@
 
 Handoff notes for picking the CareMatch build back up, written for Mike and for a future Claude session. Read this first, then `docs/design/tasks.md` for the live task list. Nothing here overrides the design docs; where they differ, the design docs win and this file is stale.
 
-*Last refreshed after T66 (Phases 0–5 complete; Phase 6 next).*
+*Last refreshed after T66; since then T50 and T51 are Done (Phases 0–6 complete) and T52/T53 were dropped. Next: T54.*
 
 ## 1. Where things stand
 
@@ -14,15 +14,15 @@ Handoff notes for picking the CareMatch build back up, written for Mike and for 
 | 3 — Mock vendors, jobs, outbox | T20–T28, T64, T60 | All Done (T29 dropped) |
 | 4 — Applicant intake | T30–T40, T62 | All Done |
 | 5 — Coordinator screens | T41–T49, T66 | All Done |
-| 6 — Compliance report | **T50** (next), T51 | Not started |
-| 7 — Acceptance and go/no-go | T52–T56, T63, T65 | Not started |
+| 6 — Compliance report | T50, T51 | All Done |
+| 7 — Acceptance and go/no-go | T54–T56, T63, T65 (T52, T53 dropped) | Not started |
 
-- **Tests:** 48 Vitest files, 248 tests, all passing. Vitest prints an informational "fsModuleCache" speed tip; deliberately left off.
+- **Tests:** 49 Vitest files, 253 tests, all passing. Vitest prints an informational "fsModuleCache" speed tip; deliberately left off.
 - **Git:** Mike commits and pushes himself, one commit per task. Last commit seen: `fcf16d8` "T49 outbox" (T66 may be committed since).
 - **Live site:** app at https://naleisa.github.io/mbroniek-IUSB-System-Design-M1/#/ and docs at …/docs/ — both redeploy on every push to `main`.
 - **Blocked / Questions table:** no open items.
 - **Tasks added this session:** T62 (test-SSN hint), T63 (UAT guide), T64 (verify by hand), T65 (self-guided walkthrough, now an in-app `#/walkthrough` page opened in a second tab, a short overview rather than a test script), T66 (home page and navigation). Reworded along the way: T40, T44 (added "View document"), T46, T56, T60, T63. Follow-ups logged in manual-checks.md: T31 (phone/SSN formatting and digit limits), T41 (dashboard next steps), T48 (outbox newest-first).
-- **Phase 7 order:** T52–T55 checks → T56 go/no-go script → T63 UAT guide → T65 walkthrough. T56, T63, and T65 all depend on T66 (done).
+- **Phase 7 order:** T54 accessibility and T55 Slow 3G checks → T56 go/no-go script → T63 UAT guide (also covers Spec Section 5 criteria 1–4; T52 and T53 were dropped for that reason) → T65 walkthrough. T56, T63, and T65 all depend on T66 (done).
 
 ## 2. How we work
 
@@ -121,7 +121,7 @@ Handoff notes for picking the CareMatch build back up, written for Mike and for 
 ## 4. Things later tasks must remember
 - **T50 compliance report:** coordinator-only, one caregiver; every template item with source, method, dates, evidence, and **verification history from the audit log** (`audit_events` rows with `record_id` = the item id, plus the record's own events); another agency's coordinator is refused (the filtered data layer already returns nothing); print stylesheet hides the navbar and buttons for "Save as PDF" (ADR-14, no PDF library).
 - **T51:** a "Compliance report" button on the record view; target under 30 seconds.
-- **T52–T55:** formal manual checks against Spec Section 5 (criteria 1–4), accessibility (WCAG 2.1 AA), and Slow 3G timings (5 s per intake step, 10 s per compressed upload), recorded in `docs/`.
+- **T54–T55:** manual checks for accessibility (WCAG 2.1 AA), and Slow 3G timings (5 s per intake step, 10 s per compressed upload), recorded in `docs/`.
 - **T56:** go/no-go demo script, including the test SSN list (`TEST_SSN_OUTCOMES`).
 - **T63:** exhaustive UAT guide in `docs/uat.md`, mapping R1–R26 and Section 5.
 - **T65:** in-app `#/walkthrough` page, a short overview; add an "Open the walkthrough in a new tab" button to the home page; link from the docs home page.
