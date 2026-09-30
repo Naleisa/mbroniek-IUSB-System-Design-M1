@@ -18,6 +18,7 @@ import UploadsStepPageComponent from '../components/UploadsStepPageComponent.vue
 import ConsentStepPageComponent from '../components/ConsentStepPageComponent.vue';
 import ReviewStepPageComponent from '../components/ReviewStepPageComponent.vue';
 import ReplacementPageComponent from '../components/ReplacementPageComponent.vue';
+import WalkthroughPageComponent from '../components/WalkthroughPageComponent.vue';
 
 const routes = [
   {
@@ -119,6 +120,12 @@ const routes = [
     path: '/applicant/replacements/:itemKey',
     component: ReplacementPageComponent,
     meta: { requiresApplicant: true, title: 'Upload a replacement' },
+  },
+  {
+    // Opened in a second tab beside the app, so it has no navbar (T65).
+    path: '/walkthrough',
+    component: WalkthroughPageComponent,
+    meta: { title: 'Walkthrough', bare: true },
   },
   {
     path: '/apply/:agencySlug',

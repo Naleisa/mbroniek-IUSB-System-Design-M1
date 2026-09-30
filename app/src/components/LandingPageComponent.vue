@@ -18,6 +18,13 @@ const home = computed(() =>
 
 // The docs site is published alongside the app on GitHub Pages; it isn't served by the dev server.
 const docsUrl = `${import.meta.env.BASE_URL}docs/`;
+
+// Walkthrough (T65): opens in a new tab. Naming this tab lets the walkthrough's "Open" links switch
+// this tab's screen instead of opening more tabs.
+const walkthroughUrl = `${import.meta.env.BASE_URL}#/walkthrough`;
+function nameAppWindow() {
+  window.name = 'carematch-app';
+}
 </script>
 
 <template>
@@ -66,6 +73,15 @@ const docsUrl = `${import.meta.env.BASE_URL}docs/`;
             <router-link to="/sign-in" class="btn btn-outline-primary w-100 mt-auto">Coordinator sign-in</router-link>
           </div>
         </article>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <span>New to CareMatch? Take the 15-minute guided tour beside the app.</span>
+        <a :href="walkthroughUrl" target="carematch-walkthrough" class="btn btn-outline-primary" @click="nameAppWindow">
+          <i class="bi bi-signpost-2 me-1" aria-hidden="true"></i>Open the walkthrough in a new tab
+        </a>
       </div>
     </div>
 
