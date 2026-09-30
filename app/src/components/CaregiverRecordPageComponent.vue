@@ -112,6 +112,10 @@ function show(value: string): string {
               <dd class="col-7 col-md-9">{{ record.replacement }}</dd>
             </template>
           </dl>
+          <!-- T51 (R13, ADR-14): the printable compliance report, ready to print or save as PDF. -->
+          <router-link :to="`/caregivers/${record.id}/report`" class="btn btn-outline-primary btn-sm mt-3">
+            <i class="bi bi-file-earmark-text me-1" aria-hidden="true"></i>Compliance report
+          </router-link>
         </div>
       </div>
 

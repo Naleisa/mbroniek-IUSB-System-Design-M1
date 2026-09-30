@@ -85,3 +85,22 @@ describe('compliance report (R13, R2, ADR-14)', () => {
     expect(complianceReport(dataLayer, 'cg-12')?.caregiverName).toBe('David Reyes');
   });
 });
+
+describe('compliance report speed (T51, ADR-14, NFR Performance)', () => {
+  it('builds the report for every seeded caregiver well within the 30-second target', async () => {
+    for (const [email, ids] of [
+      [DANA, ['cg-01', 'cg-02', 'cg-03', 'cg-04', 'cg-05', 'cg-06', 'cg-07', 'cg-08', 'cg-09', 'cg-10']],
+      ['marcus.lee@riverbendcaregivers.example', ['cg-11', 'cg-12', 'cg-13']],
+    ] as const) {
+      const dataLayer = await signedInAs(email);
+      for (const id of ids) {
+        const started = performance.now();
+        const report = complianceReport(dataLayer, id);
+        const elapsedMs = performance.now() - started;
+
+        expect(report?.items.length, id).toBe(8);
+        expect(elapsedMs, id).toBeLessThan(1000);
+      }
+    }
+  });
+});
