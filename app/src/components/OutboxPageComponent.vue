@@ -2,16 +2,20 @@
 import { computed, inject } from 'vue';
 import { useRoute } from 'vue-router';
 import { dataLayerKey } from '../data/dataLayer';
+import { demoDataKey } from '../session';
 
 // Minimal demo outbox for applicants (ADR-06). The coordinator outbox page is T49.
 const dataLayer = inject(dataLayerKey)!;
+const demoData = inject(demoDataKey)!;
 const route = useRoute();
 
 const recipient = computed(() => (typeof route.query.to === 'string' ? route.query.to.trim().toLowerCase() : ''));
 
-// A purpose-built lookup by address, so this page works while signed out (T30).
-const messages = computed(() =>
-  dataLayer
+// A purpose-built lookup by address, so this page works while signed out (T30). It looks again once
+// the demo data finishes loading on a first visit.
+const messages = computed(() => {
+  void demoData.loading;
+  return dataLayer
     .outboxFor(recipient.value)
     .filter((message) => message.channel === 'email')
     // The link stays in the stored email; the outbox shows it as a button instead of raw text.
@@ -21,8 +25,8 @@ const messages = computed(() =>
       body: message.body.replace(/:?\s*#\/auth\?\S+/, '.'),
       created_at: message.created_at,
       link: /#(\/auth\?\S+)/.exec(message.body)?.[1],
-    })),
-);
+    }));
+});
 </script>
 
 <template>

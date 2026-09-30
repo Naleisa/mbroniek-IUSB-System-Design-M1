@@ -2,11 +2,13 @@
 import { inject, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { dataLayerKey } from '../data/dataLayer';
-import { sessionKey } from '../session';
+import { demoDataKey, sessionKey } from '../session';
 import FormField from './FormField.vue';
 
 const dataLayer = inject(dataLayerKey)!;
 const session = inject(sessionKey)!;
+// On a first visit the demo accounts are still loading; signing in waits for them.
+const demoData = inject(demoDataKey)!;
 const router = useRouter();
 
 const email = ref('');
@@ -14,6 +16,9 @@ const password = ref('');
 const error = ref('');
 
 function signIn() {
+  if (demoData.loading) {
+    return;
+  }
   const user = dataLayer.signIn(email.value, password.value);
   if (!user) {
     error.value = "That email and password don't match a coordinator account. Please try again.";
@@ -36,7 +41,9 @@ function signIn() {
               <FormField id="sign-in-email" v-model="email" label="Email" type="email" required />
               <FormField id="sign-in-password" v-model="password" label="Password" type="password" required />
               <div v-if="error" class="alert alert-danger" role="alert">{{ error }}</div>
-              <button type="submit" class="btn btn-primary w-100">Sign in</button>
+              <button type="submit" class="btn btn-primary w-100" :disabled="demoData.loading">
+                {{ demoData.loading ? 'Loading demo data…' : 'Sign in' }}
+              </button>
             </form>
           </div>
         </div>
