@@ -13,3 +13,4 @@ Project documents for the CareMatch demo. The demo app itself is at [the CareMat
 ## Build log
 
 - [Manual checks](manual-checks.md)
+- [Acceptance checks (Spec Section 5)](acceptance-checks.md)
