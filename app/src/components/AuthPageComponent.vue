@@ -11,12 +11,14 @@ const route = useRoute();
 const router = useRouter();
 
 const error = ref('');
+const email = ref('');
 
 onMounted(() => {
   const token = typeof route.query.token === 'string' ? route.query.token : '';
   const result = dataLayer.signInWithLink(token);
   if (!result.ok) {
     error.value = result.reason;
+    email.value = result.email ?? '';
     return;
   }
   session.value = result.user;
@@ -32,7 +34,9 @@ onMounted(() => {
         <div v-if="error" class="alert alert-danger" role="alert">
           {{ error }}
           <div class="mt-2">
-            <router-link to="/applicant/sign-in">Request a new sign-in link</router-link>
+            <router-link :to="{ path: '/applicant/sign-in', query: email ? { email } : {} }">
+              Request a new sign-in link
+            </router-link>
           </div>
         </div>
         <p v-else>One moment…</p>

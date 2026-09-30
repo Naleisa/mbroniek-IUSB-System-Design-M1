@@ -109,6 +109,7 @@ describe('demo date (ADR-13, T60)', () => {
     expect(dataLayer.signInWithLink(decodeURIComponent(token))).toEqual({
       ok: false,
       reason: 'This sign-in link has expired. Please request a new one.',
+      email: 'maria.gonzalez@example.com',
     });
   });
 });

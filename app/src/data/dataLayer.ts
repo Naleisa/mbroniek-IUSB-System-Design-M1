@@ -34,6 +34,11 @@ export interface DataLayer {
    * sign-in link to the in-app outbox (ADR-06). Returns whether a link was sent.
    */
   requestSignInLink(email: string, next?: string): boolean;
+  /**
+   * Resume link (R8, ADR-05): emails the signed-in applicant a link back to their
+   * application, valid for the resume window. Sent when "About you" first gets an email.
+   */
+  issueResumeLink(): void;
   signInWithLink(token: string): SignInWithLinkResult;
   signOut(): void;
   getSignedInUser(): Row | undefined;
@@ -73,7 +78,10 @@ export interface DataLayer {
   setDemoDate(date: string | undefined): void;
 }
 
-export type SignInWithLinkResult = { ok: true; user: Row; next: string } | { ok: false; reason: string };
+export type SignInWithLinkResult =
+  | { ok: true; user: Row; next: string }
+  /** `email` is set for an expired link, so asking for a new one can be filled in for the applicant. */
+  | { ok: false; reason: string; email?: string };
 
 export const dataLayerKey: InjectionKey<DataLayer> = Symbol('dataLayer');
 
@@ -96,7 +104,8 @@ function currentMoment(demoDate: string | undefined): Date {
 /** Magic-link tokens. Written directly, not through `insert`, so tokens never appear in the audit log. */
 const SIGN_IN_LINKS_TABLE = 'sign_in_links';
 
-const DEFAULT_APPLICANT_ROUTE = '/applicant';
+/** Sign-in links land here by default, which sends the applicant to their next unfinished step (T38). */
+const DEFAULT_APPLICANT_ROUTE = '/applicant/resume';
 
 /** Only in-app routes are allowed as a link's destination. */
 function safeNextRoute(next: string | undefined): string {
@@ -465,42 +474,21 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
         return false;
       }
 
-      const settings = backend.readTable('settings');
-      const windowDays = Number(settings.find((row) => row.key === 'resume_window_days')?.value) || 7;
-      const now = today();
-      const expires = new Date(now);
-      expires.setDate(expires.getDate() + windowDays);
-
-      const token = crypto.randomUUID();
-      const target = safeNextRoute(next);
-      backend.writeTable(SIGN_IN_LINKS_TABLE, [
-        ...backend.readTable(SIGN_IN_LINKS_TABLE),
-        {
-          id: token,
-          token,
-          user_id: user.id,
-          next: target,
-          created_at: formatLocalDateTime(now),
-          expires_at: formatLocalDateTime(expires),
-        },
-      ]);
-
-      // Sent as CareMatch through the notification service; the audit log never holds the link itself.
-      const firstName = user.display_name.split(' ')[0];
-      sendEmail(
-        createSystemDataLayer(backend),
-        {
-          recipient_user_id: user.id,
-          agency_id: user.agency_id,
-          caregiver_id: user.caregiver_id,
-          subject: 'Your CareMatch sign-in link',
-          body:
-            `Hi ${firstName}, use this link to sign in and continue your application. ` +
-            `It works for ${windowDays} days: #${signInLinkPath(token, target)}`,
-        },
-        now,
+      emailSignInLink(user, next, 'Your CareMatch sign-in link', (firstName, windowDays, link) =>
+        `Hi ${firstName}, use this link to sign in and continue your application. It works for ${windowDays} days: ${link}`,
       );
       return true;
+    },
+
+    issueResumeLink: () => {
+      const userId = backend.readTable(SESSION_TABLE)[0]?.user_id;
+      const user = backend.readTable('users').find((row) => row.id === userId);
+      if (user?.role !== 'applicant' || !user.email) {
+        throw new Error('Please sign in to continue your application.');
+      }
+      emailSignInLink(user, undefined, 'Continue your CareMatch application', (firstName, windowDays, link) =>
+        `Hi ${firstName}, you can pick up your application where you left off any time in the next ${windowDays} days: ${link}`,
+      );
     },
 
     signInWithLink: (token) => {
@@ -510,7 +498,7 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
         return { ok: false, reason: "This sign-in link isn't valid. Please request a new one." };
       }
       if (link.expires_at < formatLocalDateTime(today())) {
-        return { ok: false, reason: 'This sign-in link has expired. Please request a new one.' };
+        return { ok: false, reason: 'This sign-in link has expired. Please request a new one.', email: user.email };
       }
       backend.writeTable(SESSION_TABLE, [{ id: 'current', user_id: user.id }]);
       appendAuditEvent({ role: 'applicant', name: user.display_name }, 'Signed in', 'Email link', 'users', user);
@@ -659,6 +647,51 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
       backend.writeTable(DEMO_DATE_TABLE, [{ id: 'current', date }]);
     },
   };
+
+  /**
+   * Creates a sign-in link valid for the resume window (ADR-05) and emails it through the
+   * notification service as CareMatch. Tokens are written directly, so the audit log never
+   * holds the link itself.
+   */
+  function emailSignInLink(
+    user: Row,
+    next: string | undefined,
+    subject: string,
+    body: (firstName: string, windowDays: number, link: string) => string,
+  ): void {
+    const settings = backend.readTable('settings');
+    const windowDays = Number(settings.find((row) => row.key === 'resume_window_days')?.value) || 7;
+    const now = today();
+    const expires = new Date(now);
+    expires.setDate(expires.getDate() + windowDays);
+
+    const token = crypto.randomUUID();
+    const target = safeNextRoute(next);
+    backend.writeTable(SIGN_IN_LINKS_TABLE, [
+      ...backend.readTable(SIGN_IN_LINKS_TABLE),
+      {
+        id: token,
+        token,
+        user_id: user.id,
+        next: target,
+        created_at: formatLocalDateTime(now),
+        expires_at: formatLocalDateTime(expires),
+      },
+    ]);
+
+    const firstName = user.display_name.split(' ')[0];
+    sendEmail(
+      createSystemDataLayer(backend),
+      {
+        recipient_user_id: user.id,
+        agency_id: user.agency_id,
+        caregiver_id: user.caregiver_id,
+        subject,
+        body: body(firstName, windowDays, `#${signInLinkPath(token, target)}`),
+      },
+      now,
+    );
+  }
 
   function agencyForIntake(agencySlug: string): Row | undefined {
     return backend.readTable('agencies').find((row) => row.intake_slug && row.intake_slug === agencySlug);

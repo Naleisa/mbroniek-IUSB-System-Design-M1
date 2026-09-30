@@ -9,6 +9,7 @@ import App from './App.vue';
 import router from './router';
 import { createBrowserBackend } from './data/browserBackend';
 import { createDataLayer, createSystemDataLayer, dataLayerKey } from './data/dataLayer';
+import { resumeStep } from './data/intake';
 import { runDelayedCheckJob, runExpirationJob } from './data/jobs';
 import { fetchSeedFiles } from './data/seed';
 import { sessionKey } from './session';
@@ -40,6 +41,10 @@ router.beforeEach((to) => {
   }
   if (to.meta.requiresApplicant && role !== 'applicant') {
     return { path: '/applicant/sign-in', query: { next: to.fullPath } };
+  }
+  // Sign-in links land here and go on to the applicant's first unfinished intake step (R8, T38).
+  if (to.path === '/applicant/resume') {
+    return resumeStep(dataLayer);
   }
   return true;
 });

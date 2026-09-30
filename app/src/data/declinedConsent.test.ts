@@ -52,7 +52,7 @@ describe('declined consent (R25, ADR-16)', () => {
 
     expect(result.ok && result.consent).toMatchObject({ type: 'authorization', decision: 'declined', wording_version: 'v1.0' });
     expect(system.get('caregivers', caregiverId)?.lifecycle_state).toBe('Intake In Progress');
-    const email = system.list('notifications').find((row) => row.caregiver_id === caregiverId);
+    const email = system.list('notifications').find((row) => row.caregiver_id === caregiverId && row.recipient_user_id === 'u-coord-a');
     expect(email).toMatchObject({
       recipient_user_id: 'u-coord-a',
       channel: 'email',

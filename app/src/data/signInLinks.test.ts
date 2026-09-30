@@ -58,7 +58,7 @@ describe('applicant magic-link sign-in (ADR-05, ADR-06, R8)', () => {
     const dataLayer = await loadSeed();
     dataLayer.requestSignInLink('maria.gonzalez@example.com', '//evil.example');
 
-    expect(dataLayer.signInWithLink(tokenFromOutbox(dataLayer))).toMatchObject({ ok: true, next: '/applicant' });
+    expect(dataLayer.signInWithLink(tokenFromOutbox(dataLayer))).toMatchObject({ ok: true, next: '/applicant/resume' });
   });
 
   it('refuses unknown and expired links', async () => {
@@ -76,6 +76,7 @@ describe('applicant magic-link sign-in (ADR-05, ADR-06, R8)', () => {
     expect(dataLayer.signInWithLink(tokenFromOutbox(dataLayer))).toEqual({
       ok: false,
       reason: 'This sign-in link has expired. Please request a new one.',
+      email: 'maria.gonzalez@example.com',
     });
     expect(dataLayer.getSignedInUser()).toBeUndefined();
   });

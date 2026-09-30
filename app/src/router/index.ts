@@ -80,6 +80,12 @@ const routes = [
     meta: { requiresApplicant: true },
   },
   {
+    // Never shown: the guard in main.ts sends the applicant on to their next unfinished step.
+    path: '/applicant/resume',
+    component: ApplicantHomePageComponent,
+    meta: { requiresApplicant: true },
+  },
+  {
     path: '/apply/:agencySlug',
     component: IntakeStartPageComponent,
   },

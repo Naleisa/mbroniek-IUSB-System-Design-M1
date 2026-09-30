@@ -156,6 +156,10 @@ export function saveIdentityStep(dataLayer: DataLayer, fields: IdentityFields, a
     { display_name: `${value.first_name} ${value.last_name}`, email: value.email },
     actor,
   );
+  // R8: once there's an address to send to (or it changed), email a link back to this application.
+  if (value.email !== user.email) {
+    dataLayer.issueResumeLink();
+  }
   return { ok: true };
 }
 
@@ -495,4 +499,36 @@ export function submitIntake(dataLayer: DataLayer, actor: Actor): SubmitResult {
     `${name} submitted a complete application to ${agencyName}. It's ready for screening.`,
   );
   return { ok: true };
+}
+
+/**
+ * Where a returning applicant picks up (R8, T38): the first unfinished intake step, worked
+ * out from what's saved rather than stored. Submitted applications go to the applicant page.
+ */
+export function resumeStep(dataLayer: DataLayer): string {
+  const caregiverId = dataLayer.getSignedInUser()?.caregiver_id;
+  const caregiver = caregiverId ? dataLayer.get('caregivers', caregiverId) : undefined;
+  if (!caregiver || caregiver.lifecycle_state !== 'Intake In Progress') {
+    return '/applicant';
+  }
+  const checklist = intakeChecklist(dataLayer);
+  const isDone = (key: string) => checklist.find((line) => line.key === key)?.done ?? false;
+  if (!isDone('identity')) {
+    return '/applicant/intake/identity';
+  }
+  const uploadKeys = whatYoullNeed(dataLayer).upload.map((item) => item.item_key);
+  const uploaded = uploadKeys.filter(isDone).length;
+  if (uploaded === 0 && uploadKeys.length > 0) {
+    return '/applicant/intake/needed';
+  }
+  if (uploaded < uploadKeys.length) {
+    return '/applicant/intake/uploads';
+  }
+  if (!isDone('disclosure')) {
+    return '/applicant/intake/disclosure';
+  }
+  if (!isDone('authorization')) {
+    return '/applicant/intake/authorization';
+  }
+  return '/applicant/intake/review';
 }

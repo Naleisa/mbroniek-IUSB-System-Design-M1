@@ -7,7 +7,8 @@ import FormField from './FormField.vue';
 const dataLayer = inject(dataLayerKey)!;
 const route = useRoute();
 
-const email = ref('');
+// An expired link sends the applicant here with their email filled in (T38).
+const email = ref(typeof route.query.email === 'string' ? route.query.email : '');
 const sentTo = ref('');
 
 function requestLink() {
