@@ -2,7 +2,15 @@
 import { inject, reactive, ref } from 'vue';
 import { compressImage } from '../compressImage';
 import { dataLayerKey } from '../data/dataLayer';
-import { checkUploadFile, UPLOAD_TYPES, uploadDocument, whatYoullNeed, type UploadErrors } from '../data/intake';
+import {
+  checkExpirationDate,
+  checkUploadFile,
+  UPLOAD_TYPES,
+  uploadDocument,
+  whatYoullNeed,
+  type UploadErrors,
+} from '../data/intake';
+import { formatLocalDateTime } from '../data/relativeDates';
 import FormField from './FormField.vue';
 import StatusBadge from './StatusBadge.vue';
 
@@ -40,6 +48,16 @@ function latestDocument(itemKey: string) {
     .sort((a, b) => b.uploaded_at.localeCompare(a.uploaded_at))[0];
 }
 
+// Past expiration dates are blocked in the form (T34): the picker starts at today (the demo date when
+// set), and a typed past date is flagged as soon as it's entered. The data layer refuses them again.
+const today = formatLocalDateTime(dataLayer.today()).slice(0, 10);
+
+function checkDate(itemKey: string, value: string) {
+  const form = forms[itemKey];
+  const past = value && value < today ? checkExpirationDate(value, today) : '';
+  form.errors = { ...form.errors, expiration_date: past || undefined };
+}
+
 function chooseFile(itemKey: string, event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0] ?? null;
   const form = forms[itemKey];
@@ -54,8 +72,9 @@ async function saveDocument(itemKey: string) {
     return;
   }
   const fileError = checkUploadFile(form.file.type, form.file.size);
-  if (fileError) {
-    form.errors = { ...form.errors, file: fileError };
+  const dateError = checkExpirationDate(form.expirationDate.trim(), today);
+  if (fileError || dateError) {
+    form.errors = { file: fileError || undefined, expiration_date: dateError || undefined };
     return;
   }
   form.saving = true;
@@ -146,8 +165,10 @@ async function saveDocument(itemKey: string) {
                 v-model="forms[item.item_key].expirationDate"
                 label="Expiration date"
                 type="date"
+                :min="today"
                 required
                 :error="forms[item.item_key].errors.expiration_date"
+                @update:model-value="checkDate(item.item_key, $event)"
               />
               <button type="submit" class="btn btn-outline-primary w-100" :disabled="forms[item.item_key].saving">
                 {{ forms[item.item_key].saving ? 'Saving…' : 'Save document' }}

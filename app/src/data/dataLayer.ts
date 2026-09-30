@@ -315,9 +315,23 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
     backend.writeTable(AUDIT_TABLE, [...backend.readTable(AUDIT_TABLE), { ...auditEvent }]);
   }
 
+  /**
+   * R24, ADR-15: a document whose expiration date is before today (the demo date when set)
+   * can't be saved, even if a form check was skipped. A document is still valid on its
+   * expiration date. Documents with no date are left to the upload step to require.
+   */
+  function refuseExpiredDocument(expirationDate: string | undefined): void {
+    if (expirationDate && expirationDate < formatLocalDateTime(today()).slice(0, 10)) {
+      throw new Error("A document that has already expired can't be saved.");
+    }
+  }
+
   function update(table: string, id: string, changes: Row, actor: Actor): Row {
     refuseAuditWrite(table);
     refuseSsnWrite(table, changes);
+    if (table === 'documents') {
+      refuseExpiredDocument(changes.expiration_date);
+    }
     const rows = backend.readTable(table);
     const index = rows.findIndex((row) => row.id === id);
     if (index === -1) {
@@ -349,6 +363,9 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
     insert: (table, row, actor) => {
       refuseAuditWrite(table);
       refuseSsnWrite(table, row);
+      if (table === 'documents') {
+        refuseExpiredDocument(row.expiration_date);
+      }
       const rows = backend.readTable(table);
       const inserted = { ...row, id: row.id || crypto.randomUUID() };
       refuseOutOfScopeWrite(table, inserted);
@@ -383,6 +400,7 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
 
     // Files are tagged with their caregiver and that caregiver's agency, and use the same access filter as tables (R4).
     putDocument: async (document, actor) => {
+      refuseExpiredDocument(document.meta.expiration_date);
       const caregiverId = document.meta.caregiver_id;
       if (!caregiverId) {
         throw new Error('A document must belong to a caregiver.');

@@ -15,6 +15,8 @@ const props = withDefaults(
     placeholder?: string;
     /** For number fields: once this many digits are entered, further typed digits are blocked. */
     maxDigits?: number;
+    /** For date fields: the earliest date the picker offers (YYYY-MM-DD). */
+    min?: string;
   }>(),
   {
     type: 'text',
@@ -25,6 +27,7 @@ const props = withDefaults(
     help: '',
     placeholder: undefined,
     maxDigits: undefined,
+    min: undefined,
   },
 );
 
@@ -62,6 +65,7 @@ function blockExtraDigits(event: InputEvent) {
       :autocomplete="autocomplete"
       :inputmode="inputmode"
       :placeholder="placeholder"
+      :min="min"
       @beforeinput="blockExtraDigits"
       :aria-invalid="props.error ? 'true' : undefined"
       :aria-describedby="[props.help ? `${id}-help` : '', props.error ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined"

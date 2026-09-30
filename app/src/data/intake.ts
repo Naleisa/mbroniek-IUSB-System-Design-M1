@@ -216,6 +216,24 @@ export function checkUploadFile(type: string, size: number): string {
   return '';
 }
 
+/**
+ * Checks a document's expiration date (R24, ADR-15): required, a real date, and not before
+ * today (`YYYY-MM-DD`). A document is still valid on its expiration date. Returns a message,
+ * or '' if it's fine. The data layer refuses expired documents again on its own.
+ */
+export function checkExpirationDate(expirationDate: string, today: string): string {
+  if (!expirationDate) {
+    return 'Enter the expiration date shown on the document.';
+  }
+  if (!DATE_ONLY.test(expirationDate)) {
+    return 'Enter a real expiration date.';
+  }
+  if (expirationDate < today) {
+    return `This document expired on ${expirationDate}. Please upload a current one.`;
+  }
+  return '';
+}
+
 export interface UploadInput {
   itemKey: string;
   /** The file to store: compressed for photos, as chosen for PDFs. */
@@ -266,10 +284,9 @@ export async function uploadDocument(dataLayer: DataLayer, input: UploadInput, a
     errors.file = fileError;
   }
   const expirationDate = input.expirationDate.trim();
-  if (!expirationDate) {
-    errors.expiration_date = 'Enter the expiration date shown on the document.';
-  } else if (!DATE_ONLY.test(expirationDate)) {
-    errors.expiration_date = 'Enter a real expiration date.';
+  const dateError = checkExpirationDate(expirationDate, formatLocalDateTime(dataLayer.today()).slice(0, 10));
+  if (dateError) {
+    errors.expiration_date = dateError;
   }
   if (Object.keys(errors).length > 0) {
     return { ok: false, errors };
