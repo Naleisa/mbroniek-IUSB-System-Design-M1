@@ -192,7 +192,7 @@ function show(value: string): string {
                 {{ orderMessages[item.item_key] }}
               </div>
               <ItemReviewActions
-                v-if="item.document || item.reviewable || item.canVerifyByHand"
+                v-if="item.document || item.reviewable || item.canVerifyByHand || item.replacement"
                 :item="item"
                 @changed="refresh += 1"
               />

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { inject, onBeforeUnmount, reactive, ref } from 'vue';
-import { markUnreadable, verifyDocument, verifyManually } from '../data/checks';
+import { markUnreadable, verifyDocument, verifyManually, verifyReplacement } from '../data/checks';
 import { dataLayerKey } from '../data/dataLayer';
 import { UPLOAD_TYPES } from '../data/intake';
 import type { RecordItem } from '../data/record';
@@ -38,9 +38,36 @@ async function toggleDocument() {
   }
 }
 
+// Replacement review (T48): view the uploaded replacement next to the current dates, then verify it.
+const viewingReplacement = ref(false);
+const replacementUrl = ref('');
+const replacementMissing = ref(false);
+
+async function toggleReplacement() {
+  viewingReplacement.value = !viewingReplacement.value;
+  const document = props.item.replacement?.document;
+  if (!viewingReplacement.value || replacementUrl.value || replacementMissing.value || !document) {
+    return;
+  }
+  const stored = await dataLayer.getDocument(document.id);
+  if (stored) {
+    replacementUrl.value = URL.createObjectURL(stored.file);
+  } else {
+    replacementMissing.value = true;
+  }
+}
+
+function approveReplacement() {
+  if (props.item.replacement) {
+    done(verifyReplacement(dataLayer, props.item.replacement.requestId, actor()));
+  }
+}
+
 onBeforeUnmount(() => {
-  if (fileUrl.value) {
-    URL.revokeObjectURL(fileUrl.value);
+  for (const url of [fileUrl.value, replacementUrl.value]) {
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
   }
 });
 
@@ -161,6 +188,38 @@ function saveManual() {
         <button type="button" class="btn btn-outline-primary btn-sm w-100 mt-2" @click="manual.open = false">Cancel</button>
       </form>
     </template>
+
+    <div
+      v-if="item.replacement?.status === 'Submitted' && item.replacement.document"
+      class="border border-primary-subtle rounded p-2 mt-2 small"
+    >
+      <p class="fw-medium mb-1">
+        <i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i>Replacement uploaded on
+        {{ item.replacement.submittedAt.slice(0, 10) }}
+      </p>
+      <p class="mb-2">
+        {{ item.replacement.document.file_name }} · new expiration {{ item.replacement.document.expiration_date }}
+        (current: {{ item.expiration_date || '—' }})
+      </p>
+      <button type="button" class="btn btn-outline-primary btn-sm w-100" :aria-expanded="viewingReplacement" @click="toggleReplacement">
+        {{ viewingReplacement ? 'Hide replacement' : 'View replacement' }}
+      </button>
+      <div v-if="viewingReplacement" class="mt-2">
+        <p v-if="replacementMissing" class="mb-0 text-body-secondary">Sample document: no image in the demo.</p>
+        <template v-else-if="replacementUrl">
+          <img
+            v-if="item.replacement.document.file_type.startsWith('image/')"
+            :src="replacementUrl"
+            :alt="`Replacement ${item.name}: ${item.replacement.document.file_name}`"
+            class="img-fluid rounded border"
+          />
+          <a v-else :href="replacementUrl" target="_blank" rel="noopener">Open the PDF</a>
+        </template>
+      </div>
+      <button type="button" class="btn btn-outline-primary btn-sm w-100 mt-2" @click="approveReplacement">
+        Verify replacement
+      </button>
+    </div>
 
     <div v-if="message" class="alert alert-warning small mt-2 mb-0" role="alert">{{ message }}</div>
   </div>

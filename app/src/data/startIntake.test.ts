@@ -109,3 +109,22 @@ describe('signed-out access (C7)', () => {
     expect(dataLayer.outboxFor('')).toEqual([]);
   });
 });
+
+describe('demo outbox order (T48 follow-up)', () => {
+  it('lists messages sent in the same minute newest first', async () => {
+    const { dataLayer, systemDataLayer } = await seeded();
+
+    dataLayer.requestSignInLink('maria.gonzalez@example.com');
+    dataLayer.requestSignInLink('maria.gonzalez@example.com');
+    const tokens = dataLayer
+      .outboxFor('maria.gonzalez@example.com')
+      .map((message) => /token=([^&\s]+)/.exec(message.body)?.[1]);
+
+    // Both were sent in the same minute; the second link requested is the newest, so it comes first.
+    const links = systemDataLayer.list('sign_in_links');
+    expect(tokens).toEqual([
+      encodeURIComponent(links[1].token),
+      encodeURIComponent(links[0].token),
+    ]);
+  });
+});

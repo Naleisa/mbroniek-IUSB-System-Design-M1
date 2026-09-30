@@ -595,9 +595,12 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
       if (!user) {
         return [];
       }
+      // Newest first. Times are kept to the minute, so messages sent in the same minute are listed
+      // in reverse of the order they were sent (the table keeps them in sending order).
       return backend
         .readTable('notifications')
         .filter((message) => message.recipient_user_id === user.id)
+        .reverse()
         .sort((a, b) => b.created_at.localeCompare(a.created_at));
     },
 

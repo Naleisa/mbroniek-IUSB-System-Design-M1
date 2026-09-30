@@ -1,5 +1,6 @@
 import { latestAuthorization, latestDocumentFor } from './checks';
 import type { DataLayer } from './dataLayer';
+import type { Row } from './storageBackend';
 
 /**
  * The coordinator's view of one caregiver record (T42, Scenario 2). Read through the
@@ -31,6 +32,14 @@ export interface RecordItem {
   reviewable: boolean;
   /** In Manual Verification and not an exclusion match (T46 decides those): can be verified by hand (T44, T64). */
   canVerifyByHand: boolean;
+  /** An open replacement request for this item (T47, T40, T48), with the uploaded file once Submitted. */
+  replacement?: {
+    requestId: string;
+    status: string;
+    dueDate: string;
+    submittedAt: string;
+    document?: { id: string; file_name: string; file_type: string; expiration_date: string };
+  };
 }
 
 export interface CaregiverRecord {
@@ -108,7 +117,23 @@ export function caregiverRecord(dataLayer: DataLayer, caregiverId: string): Care
         canVerifyByHand: false,
       };
     }
-    const latest = latestDocumentFor(dataLayer, caregiver.id, item.item_key);
+    const outstanding = item.status === 'Ordered' || item.status === 'Delayed';
+    const openRequest = dataLayer
+      .list('replacement_requests')
+      .find(
+        (row) =>
+          row.caregiver_id === caregiver.id &&
+          row.item_key === item.item_key &&
+          (row.status === 'Requested' || row.status === 'Submitted'),
+      );
+    const replacementDocument = openRequest?.document_id ? dataLayer.get('documents', openRequest.document_id) : undefined;
+    // "View document" shows the document on file; a replacement waiting for review is shown separately (T48).
+    const latest = replacementDocument
+      ? dataLayer
+          .list('documents')
+          .filter((row) => row.caregiver_id === caregiver.id && row.item_key === item.item_key && row.id !== replacementDocument.id)
+          .reduce<Row | undefined>((best, row) => (!best || row.uploaded_at >= best.uploaded_at ? row : best), undefined)
+      : latestDocumentFor(dataLayer, caregiver.id, item.item_key);
     const document = latest
       ? {
           id: latest.id,
@@ -118,7 +143,6 @@ export function caregiverRecord(dataLayer: DataLayer, caregiverId: string): Care
           uploaded_at: latest.uploaded_at,
         }
       : undefined;
-    const outstanding = item.status === 'Ordered' || item.status === 'Delayed';
     return {
       id: item.id,
       item_key: item.item_key,
@@ -138,6 +162,22 @@ export function caregiverRecord(dataLayer: DataLayer, caregiverId: string): Care
       reviewable: item.method === 'Document review' && item.status === 'Pending' && Boolean(document),
       canVerifyByHand:
         item.status === 'Manual Verification' && item.result !== 'Possible match' && item.result !== 'Confirmed match',
+      replacement: openRequest
+        ? {
+            requestId: openRequest.id,
+            status: openRequest.status,
+            dueDate: openRequest.due_date,
+            submittedAt: openRequest.submitted_at ?? '',
+            document: replacementDocument
+              ? {
+                  id: replacementDocument.id,
+                  file_name: replacementDocument.file_name,
+                  file_type: replacementDocument.file_type,
+                  expiration_date: replacementDocument.expiration_date,
+                }
+              : undefined,
+          }
+        : undefined,
     };
   });
 

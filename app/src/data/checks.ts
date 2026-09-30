@@ -476,3 +476,46 @@ export function reviewExclusionMatch(
   }
   return { ok: true, item: last! };
 }
+
+/**
+ * A coordinator verifies an uploaded replacement (T48, Scenario 3 steps 5 and 6, ADR-19). The
+ * item becomes current again with the replacement's expiration date and keeps its original
+ * verification method, and the request is closed. The record's state doesn't change: a
+ * Cleared record stays Cleared, and a Not Current one waits for the coordinator to mark it
+ * Cleared (T45).
+ */
+export function verifyReplacement(dataLayer: DataLayer, requestId: string, actor: Actor): ReviewResult {
+  if (actor.role !== 'coordinator') {
+    return { ok: false, reason: 'Only a coordinator can verify a replacement.' };
+  }
+  const request = dataLayer.get('replacement_requests', requestId);
+  if (!request) {
+    return { ok: false, reason: 'We could not find that replacement request.' };
+  }
+  if (request.status !== 'Submitted') {
+    return { ok: false, reason: 'Only an uploaded replacement can be verified.' };
+  }
+  const document = request.document_id ? dataLayer.get('documents', request.document_id) : undefined;
+  const item = dataLayer
+    .list('required_items')
+    .find((row) => row.caregiver_id === request.caregiver_id && row.item_key === request.item_key);
+  if (!document || !item) {
+    return { ok: false, reason: 'The uploaded replacement could not be found.' };
+  }
+
+  const today = formatLocalDateTime(dataLayer.today()).slice(0, 10);
+  const updated = dataLayer.update(
+    'required_items',
+    item.id,
+    {
+      status: 'Verified',
+      verified_date: today,
+      expiration_date: document.expiration_date,
+      evidence: `Reviewed replacement ${document.file_name}`,
+      notes: '',
+    },
+    actor,
+  );
+  dataLayer.update('replacement_requests', request.id, { status: 'Verified', reviewed_at: today }, actor);
+  return { ok: true, item: updated };
+}
