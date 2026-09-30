@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, inject } from 'vue';
+import { computed, inject, reactive, ref } from 'vue';
 import { useRoute } from 'vue-router';
 import { dataLayerKey } from '../data/dataLayer';
 import { caregiverRecord } from '../data/record';
-import { demoDataKey } from '../session';
+import { checkServiceKey, demoDataKey, sessionKey } from '../session';
 import StatusBadge from './StatusBadge.vue';
 
 // Caregiver record view (T42, Scenario 2): every template item with its status, source, method, and
@@ -11,12 +11,32 @@ import StatusBadge from './StatusBadge.vue';
 // detail page: the id from the route, a back link, and a not-found state.
 const dataLayer = inject(dataLayerKey)!;
 const demoData = inject(demoDataKey)!;
+const checkService = inject(checkServiceKey)!;
+const session = inject(sessionKey)!;
 const route = useRoute();
 
+// Bumped when an order is placed and again when its result arrives, so the record re-reads.
+const refresh = ref(0);
 const record = computed(() => {
   void demoData.loading;
+  void refresh.value;
   return caregiverRecord(dataLayer, String(route.params.id ?? ''));
 });
+
+// Order check / Retry / Order again (T43, R9, R21). Refusals show on the item's card.
+const orderMessages = reactive<Record<string, string>>({});
+function order(itemId: string, itemKey: string) {
+  const result = checkService.order(itemId, { role: 'coordinator', name: session.value?.display_name ?? 'Coordinator' });
+  if (!result.ok) {
+    orderMessages[itemKey] = result.reason;
+    return;
+  }
+  orderMessages[itemKey] = '';
+  refresh.value += 1;
+  void result.result.then(() => {
+    refresh.value += 1;
+  });
+}
 
 function show(value: string): string {
   return value ? value.replace('T', ' ') : '—';
@@ -101,6 +121,17 @@ function show(value: string): string {
                   <dd class="col-7">{{ item.notes }}</dd>
                 </template>
               </dl>
+              <template v-if="item.orderAction">
+                <button type="button" class="btn btn-outline-primary btn-sm w-100 mt-3" @click="order(item.id, item.item_key)">
+                  {{ item.orderAction }}
+                </button>
+                <p v-if="item.status === 'Delayed'" class="small text-body-secondary mt-1 mb-0">
+                  Places a new order. The earlier one stays on file.
+                </p>
+              </template>
+              <div v-if="orderMessages[item.item_key]" class="alert alert-warning small mt-2 mb-0" role="alert">
+                {{ orderMessages[item.item_key] }}
+              </div>
             </div>
           </article>
         </div>

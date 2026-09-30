@@ -90,8 +90,10 @@ describe('declined consent (R25, ADR-16)', () => {
   });
 
   it('allows checks again when the applicant changes their mind, even within the same minute', async () => {
-    const { dataLayer, caregiverId, danaOrders } = await ninaAtAuthorization();
+    const { dataLayer, system, caregiverId, danaOrders } = await ninaAtAuthorization();
     declineAuthorization(dataLayer, nina);
+    // Checks are ordered only on submitted applications (T43).
+    system.update('caregivers', caregiverId, { lifecycle_state: 'Intake Complete' }, { role: 'system', name: 'CareMatch' });
 
     // A newer "granted" answer replaces the decline; the decline stays on file.
     expect(recordConsent(dataLayer, 'authorization', 'granted', nina).ok).toBe(true);

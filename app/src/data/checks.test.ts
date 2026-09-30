@@ -104,12 +104,16 @@ describe('ordering a background check (R9, R10, R21, R2, ADR-11)', () => {
   });
 
   it('refuses an order for a check that is verified or still waiting on the vendor', async () => {
-    const { order } = await setUp();
+    const { systemDataLayer, order } = await setUp();
+    systemDataLayer.update('required_items', 'ri-cg-04-sam_exclusion', { status: 'Ordered' }, system);
 
     expect(order('ri-cg-05-background_check')).toEqual({
       ok: false,
       reason: "This check can't be ordered while it is Verified.",
     });
-    expect(order('ri-cg-03-background_check').ok).toBe(false);
+    expect(order('ri-cg-04-sam_exclusion')).toEqual({
+      ok: false,
+      reason: "This check can't be ordered while it is Ordered.",
+    });
   });
 });

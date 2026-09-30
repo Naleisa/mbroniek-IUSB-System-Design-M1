@@ -7,6 +7,8 @@ import type { DataLayer } from './dataLayer';
  */
 
 export interface RecordItem {
+  /** The required item's id, or '' when it's missing. */
+  id: string;
   item_key: string;
   name: string;
   /** Item status, or "Missing" when the template item has no record. */
@@ -21,6 +23,8 @@ export interface RecordItem {
   notes: string;
   /** For Ordered and Delayed checks: how long it's been waiting (R16). */
   elapsed: string;
+  /** The order action for a vendor check in an orderable status (T43): Order check, Retry, or Order again. */
+  orderAction: string;
 }
 
 export interface CaregiverRecord {
@@ -40,6 +44,12 @@ export interface CaregiverRecord {
   replacement: string;
   items: RecordItem[];
 }
+
+/** Methods a mock vendor carries out (T43); the rest are document reviews. */
+const VENDOR_METHODS = ['Background check', 'Exclusion screening', 'Registry lookup'];
+
+/** The order button each orderable status gets (T43). */
+const ORDER_ACTIONS: Record<string, string> = { Pending: 'Order check', Retryable: 'Retry', Delayed: 'Order again' };
 
 function daysSince(date: string, today: Date): number {
   const [year, month, day] = date.slice(0, 10).split('-').map(Number);
@@ -70,6 +80,7 @@ export function caregiverRecord(dataLayer: DataLayer, caregiverId: string): Care
     const item = requiredItems.find((row) => row.item_key === templateItem.item_key);
     if (!item) {
       return {
+        id: '',
         item_key: templateItem.item_key,
         name: templateItem.name,
         status: 'Missing',
@@ -82,10 +93,12 @@ export function caregiverRecord(dataLayer: DataLayer, caregiverId: string): Care
         evidence: '',
         notes: '',
         elapsed: '',
+        orderAction: '',
       };
     }
     const outstanding = item.status === 'Ordered' || item.status === 'Delayed';
     return {
+      id: item.id,
       item_key: item.item_key,
       name: templateItem.name,
       status: item.status,
@@ -98,6 +111,7 @@ export function caregiverRecord(dataLayer: DataLayer, caregiverId: string): Care
       evidence: item.evidence,
       notes: item.notes,
       elapsed: outstanding && item.ordered_at ? orderedAgo(daysSince(item.ordered_at, today)) : '',
+      orderAction: VENDOR_METHODS.includes(item.method) ? (ORDER_ACTIONS[item.status] ?? '') : '',
     };
   });
 

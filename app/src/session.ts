@@ -1,4 +1,5 @@
 import type { InjectionKey, Ref } from 'vue';
+import type { CheckService } from './data/checks';
 import type { Row } from './data/storageBackend';
 
 /** The signed-in user, shared with every page so they update on sign-in and sign-out. */
@@ -11,3 +12,6 @@ export interface DemoDataState {
 }
 
 export const demoDataKey: InjectionKey<DemoDataState> = Symbol('demoData');
+
+/** Orders vendor checks for coordinator screens without handing them the system data layer (T43). */
+export const checkServiceKey: InjectionKey<CheckService> = Symbol('checkService');

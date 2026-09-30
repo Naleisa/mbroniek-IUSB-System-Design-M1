@@ -8,11 +8,12 @@ import { createApp, reactive, ref } from 'vue';
 import App from './App.vue';
 import router from './router';
 import { createBrowserBackend } from './data/browserBackend';
+import { createCheckService } from './data/checks';
 import { createDataLayer, createSystemDataLayer, dataLayerKey } from './data/dataLayer';
 import { resumeStep } from './data/intake';
 import { runDelayedCheckJob, runExpirationJob } from './data/jobs';
 import { fetchSeedFiles } from './data/seed';
-import { demoDataKey, sessionKey, type DemoDataState } from './session';
+import { checkServiceKey, demoDataKey, sessionKey, type DemoDataState } from './session';
 
 const app = createApp(App);
 
@@ -37,6 +38,7 @@ dataLayer
   });
 app.provide(dataLayerKey, dataLayer);
 app.provide(demoDataKey, demoData);
+app.provide(checkServiceKey, createCheckService(backend, dataLayer));
 app.provide(sessionKey, ref(dataLayer.getSignedInUser()));
 
 // Coordinator and applicant pages send anyone without that role to the matching sign-in (ADR-05).

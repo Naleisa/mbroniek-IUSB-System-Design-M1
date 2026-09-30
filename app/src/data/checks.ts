@@ -1,4 +1,4 @@
-import type { DataLayer } from './dataLayer';
+import { createSystemDataLayer, type DataLayer } from './dataLayer';
 import { checkEligibility, transitionCaregiver } from './lifecycle';
 import { coordinatorsOf, sendEmail } from './notifications';
 import { formatLocalDateTime } from './relativeDates';
@@ -16,8 +16,11 @@ import {
 
 const SYSTEM: Actor = { role: 'system', name: 'CareMatch' };
 
-/** Items in these statuses can be ordered: a first order, or a retry after a failure (R21). */
-const ORDERABLE_STATUSES = ['Pending', 'Retryable'];
+/**
+ * Items in these statuses can be ordered: a first order, a retry after a failure (R21), or
+ * a new order for a check the vendor never answered (Delayed, T43). Earlier orders stay on file.
+ */
+const ORDERABLE_STATUSES = ['Pending', 'Retryable', 'Delayed'];
 
 /**
  * How long a verified background or exclusion check stays current. A demo assumption
@@ -93,6 +96,9 @@ export function orderCheck(
           : `Checks can't be ordered: ${name} hasn't given authorization yet.`,
     };
   }
+  if (caregiver.lifecycle_state === 'Intake In Progress') {
+    return { ok: false, reason: 'Checks can be ordered once the application is submitted.' };
+  }
 
   const orderedAt = formatLocalDateTime(dataLayer.today());
   dataLayer.update('required_items', item.id, { status: 'Ordered', ordered_at: orderedAt, result: '', notes: '' }, actor);
@@ -101,6 +107,11 @@ export function orderCheck(
     { required_item_id: item.id, caregiver_id: caregiver.id, source: item.source, ordered_at: orderedAt, completed_at: '', result: '' },
     actor,
   );
+
+  // The first check ordered on a submitted application starts screening (Scenario 2, step 4).
+  if (caregiver.lifecycle_state === 'Intake Complete') {
+    transitionCaregiver(dataLayer, caregiver.id, 'Screening In Progress', actor);
+  }
 
   const result = vendor.order({ caregiver_id: caregiver.id, ssn_token: caregiver.ssn_token }).then((vendorResult) => {
     recordResult(systemDataLayer, item.id, order.id, vendorResult);
@@ -261,4 +272,44 @@ export function verifyManually(
   );
   checkEligibility(dataLayer, item.caregiver_id);
   return { ok: true, item: updated };
+}
+
+export interface CheckService {
+  /** Orders the vendor check for one required item, picking the vendor from the item's method. */
+  order(requiredItemId: string, actor: Actor): OrderCheckResult;
+}
+
+/**
+ * The one way screens order checks (T43). It keeps the system data layer, which records
+ * vendor results as CareMatch, away from screens; screens pass only their own data layer.
+ */
+export function createCheckService(backend: StorageBackend, dataLayer: DataLayer): CheckService {
+  const systemDataLayer = createSystemDataLayer(backend);
+  return {
+    order: (requiredItemId, actor) => {
+      const item = dataLayer.get('required_items', requiredItemId);
+      if (!item) {
+        return { ok: false, reason: 'We could not find that item.' };
+      }
+      const vendor = vendorForItem(backend, item);
+      if (!vendor) {
+        return { ok: false, reason: "This item isn't checked by a vendor." };
+      }
+      return orderCheck(dataLayer, systemDataLayer, vendor, requiredItemId, actor);
+    },
+  };
+}
+
+/** The mock vendor that checks an item, from its verification method (ADR-01), or undefined for uploads. */
+export function vendorForItem(backend: StorageBackend, item: Row): VendorAdapter | undefined {
+  switch (item.method) {
+    case 'Background check':
+      return createBackgroundCheckVendor(backend);
+    case 'Exclusion screening':
+      return createExclusionCheckVendor(backend, item.item_key.startsWith('sam') ? 'SAM' : 'OIG');
+    case 'Registry lookup':
+      return createRegistryCheckVendor(backend);
+    default:
+      return undefined;
+  }
 }
