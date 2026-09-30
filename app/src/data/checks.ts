@@ -52,6 +52,15 @@ export function createRegistryCheckVendor(backend: StorageBackend): VendorAdapte
   return createMockRegistryCheck(createVendorVault(backend), mockVendorDelaySeconds(backend), isAvailable);
 }
 
+/** The caregiver's most recent authorization answer, if any. A later answer replaces an earlier one. */
+export function latestAuthorization(dataLayer: DataLayer, caregiverId: string): Row | undefined {
+  return dataLayer
+    .list('consents')
+    .filter((row) => row.caregiver_id === caregiverId && row.type === 'authorization')
+    // The newest answer wins; among answers saved in the same minute, the one saved last.
+    .reduce<Row | undefined>((latest, row) => (!latest || row.recorded_at >= latest.recorded_at ? row : latest), undefined);
+}
+
 /**
  * Orders a check for one required item (R9). The item moves to Ordered right away.
  * When the vendor answers, the result is recorded as CareMatch through the system
@@ -71,6 +80,18 @@ export function orderCheck(
   }
   if (!ORDERABLE_STATUSES.includes(item.status)) {
     return { ok: false, reason: `This check can't be ordered while it is ${item.status}.` };
+  }
+  // Screening needs the applicant's authorization; a decline stops it (R25, ADR-16).
+  const authorization = latestAuthorization(dataLayer, caregiver.id);
+  if (authorization?.decision !== 'granted') {
+    const name = `${caregiver.first_name} ${caregiver.last_name}`.trim() || 'This applicant';
+    return {
+      ok: false,
+      reason:
+        authorization?.decision === 'declined'
+          ? `Checks can't be ordered: ${name} declined authorization.`
+          : `Checks can't be ordered: ${name} hasn't given authorization yet.`,
+    };
   }
 
   const orderedAt = formatLocalDateTime(dataLayer.today());

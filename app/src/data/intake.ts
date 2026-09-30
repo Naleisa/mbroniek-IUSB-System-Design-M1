@@ -326,7 +326,8 @@ export function currentConsent(dataLayer: DataLayer, type: ConsentType): Row | u
     .filter(
       (row) => row.caregiver_id === caregiverId && row.type === type && row.wording_version === CONSENT_WORDING_VERSION,
     )
-    .sort((a, b) => b.recorded_at.localeCompare(a.recorded_at))[0];
+    // The newest answer wins; among answers saved in the same minute, the one saved last.
+    .reduce<Row | undefined>((latest, row) => (!latest || row.recorded_at >= latest.recorded_at ? row : latest), undefined);
 }
 
 /**
@@ -365,4 +366,22 @@ export function recordConsent(
     actor,
   );
   return { ok: true, consent };
+}
+
+/**
+ * The applicant declines the background check authorization (R25, ADR-16): records the
+ * decline and emails their agency's coordinators. The record is kept as it is; checks
+ * can't be ordered until the applicant authorizes (see `orderCheck`).
+ */
+export function declineAuthorization(dataLayer: DataLayer, actor: Actor): ConsentResult {
+  const result = recordConsent(dataLayer, 'authorization', 'declined', actor);
+  if (!result.ok) {
+    return result;
+  }
+  const name = dataLayer.getSignedInUser()?.display_name ?? 'An applicant';
+  dataLayer.notifyMyCoordinators(
+    `${name} declined background check authorization`,
+    `Screening has stopped for ${name}. The application is kept.`,
+  );
+  return result;
 }

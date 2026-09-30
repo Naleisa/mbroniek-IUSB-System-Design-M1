@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import type { InjectionKey } from 'vue';
-import { sendEmail } from './notifications';
+import { coordinatorsOf, sendEmail } from './notifications';
 import { formatLocalDateTime, resolveRelativeDate } from './relativeDates';
 import type { SeedFiles } from './seed';
 import type { Row, StorageBackend, StoredDocument } from './storageBackend';
@@ -52,6 +52,12 @@ export interface DataLayer {
   outboxFor(email: string): Row[];
   /** Whether another account already uses this email, so two applications never share one sign-in address. */
   emailInUse(email: string, exceptUserId: string): boolean;
+  /**
+   * Emails the signed-in applicant's own agency coordinators through the notification
+   * service, as CareMatch (ADR-06). For applicant events such as a declined consent (R25)
+   * or a submitted intake (R7). Throws when no applicant is signed in.
+   */
+  notifyMyCoordinators(subject: string, body: string): void;
   /** Loads the seed on first start only. Returns true when the seed was loaded. */
   loadSeed(getSeedFiles: () => Promise<SeedFiles>, today?: Date): Promise<boolean>;
   /** "Reset demo data" (T59): clears all stored data, documents, the session, and the demo date, then reloads the seed. */
@@ -605,6 +611,23 @@ function buildDataLayer(backend: StorageBackend, filtered: boolean): DataLayer {
         .readTable('notifications')
         .filter((message) => message.recipient_user_id === user.id)
         .sort((a, b) => b.created_at.localeCompare(a.created_at));
+    },
+
+    notifyMyCoordinators: (subject, body) => {
+      const userId = backend.readTable(SESSION_TABLE)[0]?.user_id;
+      const user = backend.readTable('users').find((row) => row.id === userId);
+      if (user?.role !== 'applicant' || !user.caregiver_id) {
+        throw new Error('Please sign in to continue your application.');
+      }
+      // Written as CareMatch through the system data layer: coordinators' messages are outside the applicant's view.
+      const system = createSystemDataLayer(backend);
+      for (const coordinator of coordinatorsOf(system, user.agency_id)) {
+        sendEmail(
+          system,
+          { recipient_user_id: coordinator.id, agency_id: user.agency_id, caregiver_id: user.caregiver_id, subject, body },
+          today(),
+        );
+      }
     },
 
     emailInUse: (email, exceptUserId) => {
