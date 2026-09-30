@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { computed, inject, reactive, ref } from 'vue';
+import { computed, inject, reactive, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { dataLayerKey } from '../data/dataLayer';
-import { saveIdentityStep, type IdentityErrors, type IdentityFields } from '../data/intake';
+import {
+  formatPhoneInput,
+  formatSsnInput,
+  PHONE_DIGITS,
+  saveIdentityStep,
+  SSN_DIGITS,
+  type IdentityErrors,
+  type IdentityFields,
+} from '../data/intake';
 import { sessionKey } from '../session';
 import FormField from './FormField.vue';
 
@@ -27,6 +35,26 @@ const fields = reactive<IdentityFields>({
   ssn: '',
 });
 const errors = ref<IdentityErrors>({});
+
+// Phone and SSN take their shape as they're typed, so the expected format is obvious.
+watch(
+  () => fields.phone,
+  (value) => {
+    const formatted = formatPhoneInput(value);
+    if (formatted !== value) {
+      fields.phone = formatted;
+    }
+  },
+);
+watch(
+  () => fields.ssn,
+  (value) => {
+    const formatted = formatSsnInput(value);
+    if (formatted !== value) {
+      fields.ssn = formatted;
+    }
+  },
+);
 
 const ssnOnFile = computed(() => caregiver.value?.ssn_last4 ?? '');
 
@@ -88,6 +116,8 @@ function saveAndContinue() {
                 type="tel"
                 autocomplete="tel"
                 inputmode="tel"
+                placeholder="(574) 555-0142"
+                :max-digits="PHONE_DIGITS"
                 required
                 :error="errors.phone"
               />
@@ -106,6 +136,8 @@ function saveAndContinue() {
                 label="Social Security number"
                 autocomplete="off"
                 inputmode="numeric"
+                placeholder="900-12-3456"
+                :max-digits="SSN_DIGITS"
                 :required="!ssnOnFile"
                 :help="ssnOnFile ? `SSN on file ending in ${ssnOnFile}. Leave this blank to keep it.` : ''"
                 :error="errors.ssn"

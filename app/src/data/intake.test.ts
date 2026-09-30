@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AUDIT_TABLE, createDataLayer, createSystemDataLayer } from './dataLayer';
-import { normalizeSsn, saveIdentityStep, type IdentityFields } from './intake';
+import { formatPhoneInput, formatSsnInput, normalizeSsn, saveIdentityStep, type IdentityFields } from './intake';
 import { createMemoryBackend } from './memoryBackend';
 import type { SeedFiles } from './seed';
 import type { Actor } from './types';
@@ -127,5 +127,37 @@ describe('identity and contact step (R5, R8, ADR-11)', () => {
     expect(normalizeSsn('900300001')).toBe('900-30-0001');
     expect(normalizeSsn('900 30 0001')).toBe('900-30-0001');
     expect(normalizeSsn('90030')).toBeUndefined();
+  });
+});
+
+describe('formatting phone and SSN as they are typed', () => {
+  it('shapes a phone number step by step', () => {
+    expect(formatPhoneInput('')).toBe('');
+    expect(formatPhoneInput('5')).toBe('(5');
+    expect(formatPhoneInput('574')).toBe('(574');
+    expect(formatPhoneInput('5745')).toBe('(574) 5');
+    expect(formatPhoneInput('574555')).toBe('(574) 555');
+    expect(formatPhoneInput('5745550')).toBe('(574) 555-0');
+    expect(formatPhoneInput('5745550142')).toBe('(574) 555-0142');
+  });
+
+  it('reformats pasted or messy phone numbers, drops a leading 1, and stops at 10 digits', () => {
+    expect(formatPhoneInput('574.555.0142')).toBe('(574) 555-0142');
+    expect(formatPhoneInput('+1 574 555 0142')).toBe('(574) 555-0142');
+    expect(formatPhoneInput('1')).toBe('');
+    expect(formatPhoneInput('15745550142')).toBe('(574) 555-0142');
+    expect(formatPhoneInput('(574) 555-01429')).toBe('(574) 555-0142');
+    expect(formatPhoneInput('(574) 555-0142')).toBe('(574) 555-0142');
+  });
+
+  it('shapes an SSN step by step and stops at 9 digits', () => {
+    expect(formatSsnInput('')).toBe('');
+    expect(formatSsnInput('900')).toBe('900');
+    expect(formatSsnInput('9003')).toBe('900-3');
+    expect(formatSsnInput('90030')).toBe('900-30');
+    expect(formatSsnInput('900300')).toBe('900-30-0');
+    expect(formatSsnInput('900300001')).toBe('900-30-0001');
+    expect(formatSsnInput('900-30-00019')).toBe('900-30-0001');
+    expect(formatSsnInput('900 30 0001')).toBe('900-30-0001');
   });
 });

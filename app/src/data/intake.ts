@@ -32,6 +32,45 @@ export function normalizeSsn(value: string): string | undefined {
   return /^\d{9}$/.test(digits) ? `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}` : undefined;
 }
 
+/** Most digits a US phone number and an SSN can have; the fields stop accepting more. */
+export const PHONE_DIGITS = 10;
+export const SSN_DIGITS = 9;
+
+/**
+ * Formats a phone number as it's typed: `(574`, `(574) 555`, `(574) 555-0142`. Keeps
+ * at most 10 digits and drops a leading country code 1 (US area codes never start with 1),
+ * so the shape is always clear.
+ */
+export function formatPhoneInput(value: string): string {
+  let digits = value.replace(/\D/g, '');
+  if (digits.startsWith('1')) {
+    digits = digits.slice(1);
+  }
+  digits = digits.slice(0, PHONE_DIGITS);
+  if (digits.length === 0) {
+    return '';
+  }
+  if (digits.length <= 3) {
+    return `(${digits}`;
+  }
+  if (digits.length <= 6) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  }
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+/** Formats an SSN as it's typed: `900`, `900-30`, `900-30-0001`. Keeps at most 9 digits. */
+export function formatSsnInput(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, SSN_DIGITS);
+  if (digits.length <= 3) {
+    return digits;
+  }
+  if (digits.length <= 5) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  }
+  return `${digits.slice(0, 3)}-${digits.slice(3, 5)}-${digits.slice(5)}`;
+}
+
 /**
  * Saves the identity and contact step for the signed-in applicant (R5, R8, ADR-11).
  * Every field is checked first and nothing is saved unless all pass. The SSN goes
